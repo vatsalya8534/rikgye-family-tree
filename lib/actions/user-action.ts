@@ -10,6 +10,8 @@ import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 import { Role } from "../generated/prisma/enums";
 
+
+
 // get users
 export async function getUsers() {
    return await prisma.user.findMany({
@@ -191,6 +193,22 @@ export async function loginFormUser(prevState: unknown, formData: FormData) {
          message: "Invalid email and password"
       }
    }
+}
+
+
+export async function getCurrentUser()  {
+  try {
+    const session = await auth();
+    if (session?.user) {
+      let userSession =  session.user as User;
+
+      return await getUserById(userSession.id as string)
+    }
+    return null;
+  } catch (err) {
+    console.error("Failed to get current user:", err);
+    return null;
+  }
 }
 
 // logout user

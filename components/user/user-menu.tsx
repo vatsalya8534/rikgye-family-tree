@@ -22,7 +22,9 @@ const UserMenu = ({ user }: { user: any }) => {
 
             <DropdownMenuContent align="end">
                 <DropdownMenuItem>
-                    Profile
+                     <Link href="/admin/profile">
+                        Profile
+                    </Link>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem asChild>

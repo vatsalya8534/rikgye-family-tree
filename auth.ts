@@ -28,6 +28,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     where: { username: credentials.username as string, password: credentials.password as string }
                 })
 
+                console.log(await prisma.user.findMany());
+                
+
                 if (user) {
                     return {
                         id: user.id,

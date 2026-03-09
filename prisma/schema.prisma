@@ -8,6 +8,12 @@ enum Status {
   INACTIVE
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -18,18 +24,51 @@ datasource db {
 }
 
 model User {
-  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email         String  @unique(map: "user_email_idx")
-  username      String  @unique(map: "users_username_key")
-  password      String
-  firstName     String?
-  lastName      String?
-  avatar        String?
-  role          Role    @default(USER)
-  status        Status  @default(INACTIVE)
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String  @unique(map: "user_email_idx")
+  username  String  @unique(map: "users_username_key")
+  password  String
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  firstName String?
+  lastName  String?
+  avatar    String?
+
+  role      Role    @default(USER)
+  status    Status  @default(INACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  familyMembers FamilyMember[]
 
   @@map("users")
+}
+
+model FamilyMember {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String
+  role       String?
+  gender     Gender?
+
+  birthDate  DateTime?
+  birthPlace String?
+
+  deathDate  DateTime?
+  deathPlace String?
+  isAlive    Boolean  @default(true)
+
+  userId     String   @db.Uuid
+  parentId   String?  @db.Uuid
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  parent     FamilyMember?  @relation("FamilyHierarchy", fields: [parentId], references: [id])
+  children   FamilyMember[] @relation("FamilyHierarchy")
+
+  @@index([userId])
+  @@index([parentId])
+  @@map("family_members")
 }

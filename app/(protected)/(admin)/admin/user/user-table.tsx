@@ -6,10 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { deleteUser, getUsers } from '@/lib/actions/user-action';
 import { User } from '@/types'
 import { EditIcon, Trash } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner';
+import ClientDate from '@/components/ui/client-date';
 
 const UserTable = ({ data }: { data: User[] }) => {
 
@@ -40,6 +40,11 @@ const UserTable = ({ data }: { data: User[] }) => {
           <TableHead>First Name</TableHead>
           <TableHead>Last Name</TableHead>
           <TableHead>Email</TableHead>
+
+
+
+
+            
           <TableHead>Status</TableHead>
           <TableHead>CreatedAt</TableHead>
           <TableHead>Action</TableHead>
@@ -51,7 +56,7 @@ const UserTable = ({ data }: { data: User[] }) => {
 
             {/* Image column — intentionally blank */}
             <TableCell>
-              {user.avatar &&  <img src={user.avatar} alt="" height="100" width="100" />}
+              {user.avatar && <img src={user.avatar} alt="" height="100" width="100" />}
             </TableCell>
 
             <TableCell>{user.firstName}</TableCell>
@@ -68,9 +73,7 @@ const UserTable = ({ data }: { data: User[] }) => {
             </TableCell>
 
             <TableCell>
-              {user.createdAt
-                ? new Date(user.createdAt).toLocaleString()
-                : "-"}
+              <ClientDate date={user.createdAt} />
             </TableCell>
 
             <TableCell>

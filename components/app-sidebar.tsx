@@ -75,7 +75,6 @@ const data = {
       icon: IconPageBreak,
       isActive: true,
     },
-
     {
       title: "General Settings",
       url: "/admin/settings",
@@ -95,9 +94,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

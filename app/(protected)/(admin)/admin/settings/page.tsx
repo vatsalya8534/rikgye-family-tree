@@ -100,18 +100,18 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="bg-gray-50 py-12 px-6 min-h-screen">
-      <div className="max-w-6xl mx-auto">
-        <Card className="rounded-2xl shadow-sm border bg-white">
+    <div className="bg-gray-50 py-5 px-0 min-h-screen">
+      <div className="w-full mx-auto">
+        <Card className="shadow-sm border bg-white">
           
-          <div className="px-10 py-8 border-b">
-            <h1 className="text-3xl font-semibold">Settings</h1>
+          <div className="px-8 py-2 border-b">
+            <h1 className="text-2xl font-semibold">Settings</h1>
             <p className="text-sm text-muted-foreground mt-2">
               Manage your application configuration.
             </p>
           </div>
 
-          <div className="px-10 pt-6 border-b flex gap-8">
+          <div className="px-10 border-b flex gap-8">
             {tabs.map((tab) => (
               <button
                 key={tab}
@@ -127,7 +127,7 @@ export default function SettingsPage() {
             ))}
           </div>
 
-          <div className="px-10 py-10 space-y-10">
+          <div className="px-10 py-5 space-y-5">
 
             {activeTab === "general" && (
               <div className="space-y-6">
@@ -170,7 +170,7 @@ export default function SettingsPage() {
             )}
 
             {activeTab === "mail" && (
-              <div className="space-y-6">
+              <div className="space-y-4">
 
                 <div className="flex justify-between items-center border p-4 rounded-xl bg-gray-50">
                   <span className="font-medium">Enable SMTP</span>

@@ -15,6 +15,19 @@ async function main() {
         },
     });
 
+    await prisma.user.create({
+        data: {
+            username: "user",
+            firstName: "User",
+            lastName: "User",
+            email: "user@example.com",
+            avatar: "",
+            password: "user123",
+            status: Status.ACTIVE,
+            role: Role.USER,
+        },
+    });
+
     console.log("Seed data inserted 🌱");
 }
 

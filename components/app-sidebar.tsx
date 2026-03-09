@@ -75,7 +75,6 @@ const data = {
       icon: IconPageBreak,
       isActive: true,
     },
-
     {
       title: "General Settings",
       url: "/admin/settings",

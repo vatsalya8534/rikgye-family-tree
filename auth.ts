@@ -28,9 +28,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     where: { username: credentials.username as string, password: credentials.password as string }
                 })
 
-                console.log(await prisma.user.findMany());
-                
-
                 if (user) {
                     return {
                         id: user.id,
@@ -43,9 +40,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                 // check if user exist and if the password matches
                 // if (user && user.password) {
-                //     // const isMatched = await bycrpt.compare(credentials.password as string, user.password)
+                // const isMatched = await bycrpt.compare(credentials.password as string, user.password)
 
-                //     // if password  is correct , return user
+                // if password  is correct , return user
                 //     if (isMatched) {
                 //         return {
                 //             id: user.id,

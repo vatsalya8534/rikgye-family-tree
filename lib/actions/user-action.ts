@@ -151,7 +151,6 @@ export async function deleteUser(id: any) {
 
 // login 
 export async function loginFormUser(prevState: unknown, formData: FormData) {
-    const session = await auth()
     
    try {
       const user = loginFormSchema.parse({
@@ -170,8 +169,7 @@ export async function loginFormUser(prevState: unknown, formData: FormData) {
          }
       }
 
-      console.log(session?.user);
-      
+      const session = await auth()
 
       if(session?.user?.role === Role.USER) {
          redirect("/user/home")

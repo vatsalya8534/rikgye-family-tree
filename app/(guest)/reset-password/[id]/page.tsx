@@ -1,11 +1,19 @@
 import { ResetPasswordForm } from "../reset-password-form";
 
-export default function ResetPasswordPage() {
+export default async function ResetPasswordPage({ params }: {
+    params: Promise<{ id: string }>
+}) {
+
+    const { id } = await params;
+
+    console.log(id);
+    
+
     return (
         <div>
             <div className="flex min-h-svh w-full items-center justify-center">
                 <div className="w-full max-w-sm">
-                    <ResetPasswordForm />
+                    <ResetPasswordForm userId={id} />
                 </div>
             </div>
         </div>

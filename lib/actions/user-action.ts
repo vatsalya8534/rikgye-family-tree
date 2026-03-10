@@ -10,6 +10,7 @@ import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 import { Role } from "../generated/prisma/enums";
 import { sendMail } from "../mail";
+import bcrypt from "bcrypt"
 
 
 
@@ -251,7 +252,7 @@ export async function logoutUser() {
 
 
 export async function forgotPasword(user: any) {
-   // try {
+   try {
       await sendMail({
          to: user.email as string,
          subject: "Forgot Password",
@@ -265,12 +266,58 @@ export async function forgotPasword(user: any) {
          success: true,
          message: "Please check your inbox"
       }
-   // } catch (error) {
-   //    return {
-   //       success: false,
-   //       message: "Something went wrong"
-   //    }
-   // }
+   } catch (error) {
+      return {
+         success: false,
+         message: "Something went wrong"
+      }
+   }
+}
+
+export async function updatePassword(userId: string, password: string) {
+   try {
+
+      let user = await getUserById(userId)
+
+      if (user.success) {
+         const hashedPassword = await bcrypt.hash(password, 10)
+
+         await prisma.user.update({
+            where: {
+               id: userId
+            },
+            data: {
+               password: hashedPassword
+            }
+         })
+
+         await sendMail({
+            to: user?.data?.email as string,
+            subject: "Reset Password",
+            html: `
+        Password has been reset`,
+         });
+
+         return { success: true }
+      } else {
+         return {
+            success: false,
+            message: "user not found"
+         }
+      }
+
+
+   } catch (error: any) {
+      return {
+         success: false,
+         message: error.message
+      }
+   }
 
 
 }
+
+
+
+
+

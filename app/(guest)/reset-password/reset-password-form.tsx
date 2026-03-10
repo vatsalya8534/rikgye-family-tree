@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,6 +20,16 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { passwordSchema } from "@/lib/validators"
 import { updatePassword } from "@/lib/actions/user-action"
 import { z } from "zod"
+import { useRouter } from "next/navigation"
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 type FormData = z.infer<typeof passwordSchema>
 
@@ -28,16 +39,22 @@ export function ResetPasswordForm({
   ...props
 }: React.ComponentProps<"div"> & { userId: string }) {
 
-  const { register, handleSubmit, formState: { errors }, } = useForm<FormData>({
+  const [dialogOpen, setDialogOpen] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(passwordSchema),
   })
+  const router = useRouter();
 
   const onSubmit = async (data: FormData) => {
     try {
-
       await updatePassword(userId, data.newPassword)
 
-      alert("Password updated successfully")
+      setDialogOpen(true)
 
     } catch (error) {
       console.log(error)
@@ -88,13 +105,37 @@ export function ResetPasswordForm({
               </Field>
 
               <Field>
-                <Button type="submit">Submit</Button>
+                <Button type="submit" className="w-full">
+                  Update Password
+                </Button>
               </Field>
 
             </FieldGroup>
           </form>
         </CardContent>
       </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Password Updated</DialogTitle>
+            <DialogDescription>
+              Your password has been successfully updated.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setDialogOpen(false)
+                router.push("/")
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -287,7 +287,7 @@ export async function updatePassword(userId: string, password: string) {
                id: userId
             },
             data: {
-               password: hashedPassword
+               password: password
             }
          })
 

@@ -54,7 +54,7 @@ const ProminentPage = () => {
           </h1>
 
           <button
-            onClick={() => router.push("/admin/add-member")}
+            onClick={() => router.push("/add-member")}
             className="bg-black text-white px-5 py-2 text-sm uppercase tracking-wider hover:opacity-80 transition"
           >
             + Add Member

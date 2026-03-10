@@ -23,7 +23,7 @@ const items = [
     },
     {
         title: "Find Rikhye",
-        url: "/findmemeber",
+        url: "/findmember",
         icon: IconUser,
         isActive: true,
     },

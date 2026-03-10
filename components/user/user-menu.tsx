@@ -10,10 +10,10 @@ import Link from 'next/link';
 const UserMenu = ({ user }: { user: any }) => {
     let image = defaultImage;
 
-    if(user.image) {
+    if (user.image) {
         image = user.image;
     }
-    
+
     return (
         <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
@@ -21,17 +21,21 @@ const UserMenu = ({ user }: { user: any }) => {
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                     <Link href="/admin/profile">
-                        Profile
-                    </Link>
-                </DropdownMenuItem>
 
-                <DropdownMenuItem asChild>
-                    <Link href="/admin/settings">
-                        Settings
-                    </Link>
-                </DropdownMenuItem>
+                {user.role === "ADMIN" && (
+                    <>
+                        <DropdownMenuItem>
+                            <Link href="/admin/profile">
+                                Profile
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/admin/settings">
+                                Settings
+                            </Link>
+                        </DropdownMenuItem>
+                    </>
+                )}
 
                 <DropdownMenuItem className="text-red-500" onClick={() => logoutUser()}>
                     Logout

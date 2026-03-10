@@ -153,7 +153,7 @@ export async function deleteUser(id: any) {
 
 // login 
 export async function loginFormUser(prevState: unknown, formData: FormData) {
-    
+
    try {
       const user = loginFormSchema.parse({
          username: formData.get("username"),
@@ -171,18 +171,9 @@ export async function loginFormUser(prevState: unknown, formData: FormData) {
          }
       }
 
-      const session = await auth()
+      redirect("/redirect")
 
-      if(session?.user?.role === Role.USER) {
-         redirect("/home")
-      }else {
-         redirect("/admin/home")
-      }
-    
    } catch (error) {
-
-      console.log(error);
-
 
       if (isRedirectError(error)) {
          throw error
@@ -196,19 +187,19 @@ export async function loginFormUser(prevState: unknown, formData: FormData) {
 }
 
 
-export async function getCurrentUser()  {
-  try {
-    const session = await auth();
-    if (session?.user) {
-      let userSession =  session.user as User;
+export async function getCurrentUser() {
+   try {
+      const session = await auth();
+      if (session?.user) {
+         let userSession = session.user as User;
 
-      return await getUserById(userSession.id as string)
-    }
-    return null;
-  } catch (err) {
-    console.error("Failed to get current user:", err);
-    return null;
-  }
+         return await getUserById(userSession.id as string)
+      }
+      return null;
+   } catch (err) {
+      console.error("Failed to get current user:", err);
+      return null;
+   }
 }
 
 // logout user

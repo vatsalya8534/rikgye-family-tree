@@ -1,354 +1,611 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { Loader2, CheckCircle2 } from "lucide-react";
-import { motion } from "framer-motion";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { useEffect, useState } from "react"
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
+  Loader2,
+  CheckCircle2,
+  Trash2,
+  Pencil,
+  Settings,
+  Mail,
+  FileText
+} from "lucide-react"
+
+import { motion } from "framer-motion"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { Card } from "@/components/ui/card"
+
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent
+} from "@/components/ui/tabs"
+
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent
+} from "@/components/ui/accordion"
+
 import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { set } from "zod";
+  DialogDescription
+} from "@/components/ui/dialog"
 
-type Tab = "general" | "mail";
+type Template = {
+  id: string
+  name: string
+  description: string
+}
 
 type SettingsForm = {
-  id: string;
-  siteTitle: string;
-  siteKeywords: string;
-  siteDescription: string;
-  siteUrl: string;
-  isSMTP: boolean;
-  host: string;
-  username: string;
-  password: string;
-  port: number | null;
-  auth: boolean;
-  encryption: string;
-};
+  id: string
+  siteTitle: string
+  siteKeywords: string
+  siteDescription: string
+  siteUrl: string
+  logo?: string
+  favicon?: string
+  isSMTP: boolean
+  host: string
+  username: string
+  password: string
+  port: number | null
+}
 
 export default function SettingsPage() {
+
   const [formData, setFormData] = useState<SettingsForm>({
     id: "",
     siteTitle: "",
     siteKeywords: "",
     siteDescription: "",
     siteUrl: "",
+    logo: "",
+    favicon: "",
     isSMTP: false,
     host: "",
     username: "",
     password: "",
-    port: null,
-    auth: false,
-    encryption: "none",
-  });
+    port: null
+  })
 
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("general");
+  const [templates, setTemplates] = useState<Template[]>([])
 
-  const tabs: readonly Tab[] = ["general", "mail"];
+  const [templateName, setTemplateName] = useState("")
+  const [templateDescription, setTemplateDescription] = useState("")
+
+  const [editingId, setEditingId] = useState<string | null>(null)
+
+  const [editTemplateName, setEditTemplateName] = useState("")
+  const [editTemplateDescription, setEditTemplateDescription] = useState("")
+
+  const [editOpen, setEditOpen] = useState(false)
+
+  const [loading, setLoading] = useState(false)
+  const [templateLoading, setTemplateLoading] = useState(false)
+
+  const [successOpen, setSuccessOpen] = useState(false)
+
+  const handleFile = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: "logo" | "favicon"
+  ) => {
+
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const preview = URL.createObjectURL(file)
+
+    setFormData({
+      ...formData,
+      [field]: preview
+    })
+  }
 
   const getData = async () => {
-    try {
-      const res = await fetch("/api/settings");
-
-      let data = await res.json();
-
-      if (data) {
-        setFormData({
-          id: data.id,
-          siteTitle: data.siteTitle,
-          siteKeywords: data.siteKeywords,
-          siteDescription: data.siteDescription,
-          siteUrl: data.siteUrl,
-          isSMTP: data.isSMTP,
-          host: data.host,
-          username: data.username,
-          password: data.password,
-          port: data.port,
-          auth: data.auth,
-          encryption: data.encryption,
-        })
-      }
-    } catch (err) {
-      console.error("FETCH ERROR:", err);
-    }
+    const res = await fetch("/api/settings")
+    const data = await res.json()
+    if (data) setFormData(data)
   }
 
   const handleSave = async () => {
-    setLoading(true);
 
-    try {
-      const res = await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+    setLoading(true)
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error("SERVER ERROR:", errorData);
-        throw new Error("Failed to save settings");
-      }
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData)
+    })
 
-      setOpen(true);
+    setLoading(false)
+    setSuccessOpen(true)
+  }
 
-    } catch (err) {
-      console.error("SAVE ERROR:", err);
-    }
+  const fetchTemplates = async () => {
+    const res = await fetch("/api/templates")
+    const data = await res.json()
+    if (Array.isArray(data)) setTemplates(data)
+  }
 
-    setLoading(false);
-  };
+  const createTemplate = async () => {
+
+    if (!templateName) return
+
+    setTemplateLoading(true)
+
+    await fetch("/api/templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: templateName,
+        description: templateDescription
+      })
+    })
+
+    setTemplateName("")
+    setTemplateDescription("")
+
+    fetchTemplates()
+
+    setTemplateLoading(false)
+  }
+
+  const deleteTemplate = async (id: string) => {
+
+    await fetch(`/api/templates/${id}`, { method: "DELETE" })
+
+    fetchTemplates()
+  }
+
+  const openEditDialog = (template: Template) => {
+
+    setEditingId(template.id)
+
+    setEditTemplateName(template.name)
+    setEditTemplateDescription(template.description)
+
+    setEditOpen(true)
+  }
+
+  const updateTemplate = async () => {
+
+    if (!editingId) return
+
+    await fetch(`/api/templates/${editingId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: editTemplateName,
+        description: editTemplateDescription
+      })
+    })
+
+    setEditOpen(false)
+    setEditingId(null)
+
+    setEditTemplateName("")
+    setEditTemplateDescription("")
+
+    fetchTemplates()
+  }
 
   useEffect(() => {
-    getData();
-  }, []);
+    getData()
+    fetchTemplates()
+  }, [])
 
   return (
-    <div className="bg-gray-50 py-5 px-0 min-h-screen">
-      <div className="w-full mx-auto">
-        <Card className="shadow-sm border bg-white">
 
-          <div className="px-8 py-2 border-b">
-            <h1 className="text-2xl font-semibold">Settings</h1>
-            <p className="text-sm text-muted-foreground mt-2">
-              Manage your application configuration.
-            </p>
-          </div>
+    <div className="p-8 space-y-6">
 
-          <div className="px-10 border-b flex gap-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`pb-4 text-sm font-medium capitalize ${activeTab === tab
-                  ? "border-b-2 border-black text-black"
-                  : "text-muted-foreground"
-                  }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          <div className="px-10 py-5 space-y-5">
-
-            {activeTab === "general" && (
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label>Site Title</label>
-                  <Input
-                    placeholder="Site Title"
-                    value={formData.siteTitle}
-                    onChange={(e) =>
-                      setFormData({ ...formData, siteTitle: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label>Site URL</label>
-                  <Input
-                    placeholder="Site URL"
-                    value={formData.siteUrl}
-                    onChange={(e) =>
-                      setFormData({ ...formData, siteUrl: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label>Site Keywords</label>
-                  <Input
-                    placeholder="Keywords"
-                    value={formData.siteKeywords}
-                    onChange={(e) =>
-                      setFormData({ ...formData, siteKeywords: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label>Site Description</label>
-                  <Textarea
-                    rows={4}
-                    placeholder="Description"
-                    value={formData.siteDescription}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        siteDescription: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-            )}
-
-            {activeTab === "mail" && (
-              <div className="space-y-4">
-
-                <div className="flex justify-between items-center border p-4 rounded-xl bg-gray-50">
-                  <span className="font-medium">Enable SMTP</span>
-                  <Switch
-                    checked={formData.isSMTP}
-                    onCheckedChange={(val) =>
-                      setFormData({ ...formData, isSMTP: val })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label>SMTP Host</label>
-                  <Input
-                    placeholder="Host"
-                    disabled={!formData.isSMTP}
-                    value={formData.host}
-                    onChange={(e) =>
-                      setFormData({ ...formData, host: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label>SMTP Username</label>
-                  <Input
-                    placeholder="Username"
-                    disabled={!formData.isSMTP}
-                    value={formData.username}
-                    onChange={(e) =>
-                      setFormData({ ...formData, username: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label>SMTP Password</label>
-                  <Input
-                    type="password"
-                    placeholder="Password"
-                    disabled={!formData.isSMTP}
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label>SMTP Port</label>
-                  <Input
-                    type="number"
-                    placeholder="Port"
-                    disabled={!formData.isSMTP}
-                    value={formData.port ?? ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        port: e.target.value
-                          ? Number(e.target.value)
-                          : null,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label>Auth</label>
-                  <Select
-                    disabled={!formData.isSMTP}
-                    value={formData.auth ? "true" : "false"}
-                    onValueChange={(val) =>
-                      setFormData({
-                        ...formData,
-                        auth: val === "true",
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">Auth Enabled</SelectItem>
-                      <SelectItem value="false">Auth Disabled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label>Encryption</label>
-                  <Select
-                    disabled={!formData.isSMTP}
-                    value={formData.encryption}
-                    onValueChange={(val) =>
-                      setFormData({
-                        ...formData,
-                        encryption: val,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="tls">TLS</SelectItem>
-                      <SelectItem value="ssl">SSL</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end border-t pt-6">
-              <Button onClick={handleSave} disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="animate-spin mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </Button>
-            </div>
-          </div>
-        </Card>
+      <div>
+        <h1 className="text-2xl font-semibold">Settings</h1>
+        <p className="text-muted-foreground text-sm">
+          Manage your application settings
+        </p>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Tabs defaultValue="general">
+
+        <TabsList className="grid grid-cols-3 w-[400px]">
+
+          <TabsTrigger value="general">
+            <Settings className="w-4 h-4 mr-2" />
+            General
+          </TabsTrigger>
+
+          <TabsTrigger value="mail">
+            <Mail className="w-4 h-4 mr-2" />
+            Mail
+          </TabsTrigger>
+
+          <TabsTrigger value="templates">
+            <FileText className="w-4 h-4 mr-2" />
+            Templates
+          </TabsTrigger>
+
+        </TabsList>
+
+        <TabsContent value="general">
+
+          <Card className="p-6 space-y-6 max-w-3xl">
+
+            <div className="grid gap-4">
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Site Title</label>
+                <Input
+                  placeholder="Site Title"
+                  value={formData.siteTitle}
+                  onChange={(e) =>
+                    setFormData({ ...formData, siteTitle: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Site URL</label>
+                <Input
+                  placeholder="Site URL"
+                  value={formData.siteUrl}
+                  onChange={(e) =>
+                    setFormData({ ...formData, siteUrl: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Logo</label>
+
+                  {formData.logo && (
+                    <div className="border rounded-md p-2 w-fit">
+                      <img
+                        src={formData.logo}
+                        alt="logo"
+                        className="h-12 object-contain"
+                      />
+                    </div>
+                  )}
+
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFile(e, "logo")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Favicon</label>
+
+                  {formData.favicon && (
+                    <div className="border rounded-md p-2 w-fit">
+                      <img
+                        src={formData.favicon}
+                        alt="favicon"
+                        className="h-8 w-8 object-contain"
+                      />
+                    </div>
+                  )}
+
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFile(e, "favicon")}
+                  />
+                </div>
+
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Site Keywords</label>
+                <Input
+                  placeholder="Site Keywords"
+                  value={formData.siteKeywords}
+                  onChange={(e) =>
+                    setFormData({ ...formData, siteKeywords: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Site Description</label>
+                <Textarea
+                  placeholder="Site Description"
+                  value={formData.siteDescription}
+                  onChange={(e) =>
+                    setFormData({ ...formData, siteDescription: e.target.value })
+                  }
+                />
+              </div>
+
+            </div>
+
+            <Button onClick={handleSave} disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin mr-2" />
+                  Saving
+                </>
+              ) : "Save Changes"}
+            </Button>
+
+          </Card>
+
+        </TabsContent>
+
+        <TabsContent value="mail">
+
+          <Card className="p-6 space-y-6 max-w-3xl">
+
+            <div className="flex items-center justify-between border rounded-lg p-4">
+
+              <div>
+                <p className="font-medium">Enable SMTP</p>
+                <p className="text-sm text-muted-foreground">
+                  Use external SMTP mail server
+                </p>
+              </div>
+
+              <Switch
+                checked={formData.isSMTP}
+                onCheckedChange={(v) =>
+                  setFormData({ ...formData, isSMTP: v })
+                }
+              />
+
+            </div>
+
+            <div className="grid gap-4">
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">SMTP Host</label>
+                <Input
+                  placeholder="SMTP Host"
+                  disabled={!formData.isSMTP}
+                  value={formData.host}
+                  onChange={(e) =>
+                    setFormData({ ...formData, host: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Username</label>
+                <Input
+                  placeholder="Username"
+                  disabled={!formData.isSMTP}
+                  value={formData.username}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Password</label>
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  disabled={!formData.isSMTP}
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Port</label>
+                <Input
+                  type="number"
+                  placeholder="Port"
+                  disabled={!formData.isSMTP}
+                  value={formData.port ?? ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      port: e.target.value ? Number(e.target.value) : null
+                    })
+                  }
+                />
+              </div>
+
+            </div>
+
+            <Button onClick={handleSave}>
+              Save Mail Settings
+            </Button>
+
+          </Card>
+
+        </TabsContent>
+
+        <TabsContent value="templates">
+
+          <Card className="p-6 space-y-6 max-w-3xl">
+
+            <Accordion type="multiple">
+
+              <AccordionItem value="create">
+
+                <AccordionTrigger>
+                  Create Template
+                </AccordionTrigger>
+
+                <AccordionContent className="space-y-4">
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Template Name</label>
+                    <Input
+                      placeholder="Template Name"
+                      value={templateName}
+                      onChange={(e) => setTemplateName(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Description</label>
+                    <Textarea
+                      placeholder="Description"
+                      value={templateDescription}
+                      onChange={(e) => setTemplateDescription(e.target.value)}
+                    />
+                  </div>
+
+                  <Button
+                    onClick={createTemplate}
+                    disabled={templateLoading}
+                  >
+                    {templateLoading ? (
+                      <>
+                        <Loader2 className="animate-spin mr-2" />
+                        Creating
+                      </>
+                    ) : "Create Template"}
+                  </Button>
+
+                </AccordionContent>
+
+              </AccordionItem>
+
+            </Accordion>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+              {templates.map((t) => (
+                <Card key={t.id} className="p-4 relative">
+
+                  <h4 className="font-semibold">{t.name}</h4>
+
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {t.description}
+                  </p>
+
+                  <div className="absolute top-3 right-3 flex gap-2">
+
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      onClick={() => openEditDialog(t)}
+                    >
+                      <Pencil size={16} />
+                    </Button>
+
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      onClick={() => deleteTemplate(t.id)}
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+
+                  </div>
+
+                </Card>
+              ))}
+
+            </div>
+
+          </Card>
+
+        </TabsContent>
+
+      </Tabs>
+
+      <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
+
         <DialogContent>
+
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             className="text-center py-6"
           >
+
             <CheckCircle2 className="text-green-600 w-14 h-14 mx-auto mb-4" />
-            <DialogTitle>Saved Successfully 🎉</DialogTitle>
+
+            <DialogTitle>
+              Settings Saved 🎉
+            </DialogTitle>
+
             <DialogDescription>
-              Your settings have been saved.
+              Your changes were saved successfully.
             </DialogDescription>
-            <div className="mt-6">
-              <Button onClick={() => setOpen(false)}>Close</Button>
-            </div>
+
+            <Button
+              className="mt-6"
+              onClick={() => setSuccessOpen(false)}
+            >
+              Close
+            </Button>
+
           </motion.div>
+
         </DialogContent>
+
       </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+
+        <DialogContent>
+
+          <DialogTitle>
+            Edit Template
+          </DialogTitle>
+
+          <div className="space-y-4 mt-4">
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Template Name</label>
+              <Input
+                placeholder="Template Name"
+                value={editTemplateName}
+                onChange={(e) => setEditTemplateName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                placeholder="Description"
+                value={editTemplateDescription}
+                onChange={(e) => setEditTemplateDescription(e.target.value)}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+
+              <Button
+                variant="outline"
+                onClick={() => setEditOpen(false)}
+              >
+                Cancel
+              </Button>
+
+              <Button onClick={updateTemplate}>
+                Update Template
+              </Button>
+
+            </div>
+
+          </div>
+
+        </DialogContent>
+
+      </Dialog>
+
     </div>
-  );
+  )
 }

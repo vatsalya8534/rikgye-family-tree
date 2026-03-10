@@ -1,11 +1,12 @@
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import UserMenu from "@/components/user/user-menu";
+import { Role } from "@/lib/generated/prisma/enums";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export default async function RootLayout({
     children,
@@ -16,6 +17,10 @@ export default async function RootLayout({
 
     if (!session?.user) {
         redirect("/")
+    }
+
+    if(session.user.role !== Role.ADMIN) {
+      notFound()
     }
 
     return (

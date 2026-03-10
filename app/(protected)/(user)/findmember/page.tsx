@@ -1,7 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState, useMemo } from "react"
-import maplibregl from "maplibre-gl"
+import "leaflet/dist/leaflet.css";
+
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
+import L from "leaflet"
 
 const members = [
   {
@@ -18,8 +21,7 @@ const members = [
 ]
 
 export default function FindMember() {
-  const mapContainer = useRef<HTMLDivElement | null>(null)
-  const mapRef = useRef<maplibregl.Map | null>(null)
+  const position: [number, number] = [28.6139, 77.2090]
 
   const [citySearch, setCitySearch] = useState("")
   const [mode, setMode] = useState<"birth" | "live">("birth")
@@ -33,64 +35,6 @@ export default function FindMember() {
         .includes(citySearch.toLowerCase())
     })
   }, [citySearch, mode])
-
-  useEffect(() => {
-    if (!mapContainer.current) return
-
-    mapRef.current = new maplibregl.Map({
-      container: mapContainer.current,
-      style: "https://demotiles.maplibre.org/style.json",
-      center: [78.9629, 20.5937],
-      zoom: 4,
-    })
-
-    mapRef.current.addControl(
-      new maplibregl.NavigationControl(),
-      "top-right"
-    )
-
-    return () => {
-      mapRef.current?.remove()
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!mapRef.current) return
-
-    // Remove old markers
-    document
-      .querySelectorAll(".custom-marker")
-      .forEach((el) => el.remove())
-
-    filteredMembers.forEach((member) => {
-      const lat =
-        mode === "birth"
-          ? member.birthLat
-          : member.liveLat
-
-      const lng =
-        mode === "birth"
-          ? member.birthLng
-          : member.liveLng
-
-      const el = document.createElement("div")
-      el.className =
-        "custom-marker bg-black w-3 h-3 rounded-full"
-
-      new maplibregl.Marker(el)
-        .setLngLat([lng, lat])
-        .setPopup(
-          new maplibregl.Popup().setHTML(`
-            <strong>${member.name}</strong><br/>
-            ${mode === "birth"
-              ? member.birthCity
-              : member.liveCity}<br/>
-            ${member.phone}
-          `)
-        )
-        .addTo(mapRef.current!)
-    })
-  }, [filteredMembers, mode])
 
   return (
     <div className="min-h-screen p-8 space-y-8">
@@ -107,11 +51,10 @@ export default function FindMember() {
       <div className="flex flex-col md:flex-row gap-4">
         <input
           type="text"
-          placeholder={`Search by ${
-            mode === "birth"
+          placeholder={`Search by ${mode === "birth"
               ? "Birthplace"
               : "Residence"
-          } city...`}
+            } city...`}
           value={citySearch}
           onChange={(e) =>
             setCitySearch(e.target.value)
@@ -131,10 +74,16 @@ export default function FindMember() {
         </select>
       </div>
 
-      <div
-        ref={mapContainer}
-        className="w-full h-[500px] border rounded"
-      />
+      <MapContainer
+        center={position}
+        zoom={6}
+        style={{ height: "400px", width: "100%" }}
+      >
+        <TileLayer
+          attribution='© OpenStreetMap contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+      </MapContainer>
 
       <div className="overflow-x-auto border rounded">
         <table className="w-full text-sm">

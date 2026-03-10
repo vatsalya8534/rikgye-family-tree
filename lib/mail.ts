@@ -4,8 +4,8 @@ var transport = nodemailer.createTransport({
   host: "sandbox.smtp.mailtrap.io",
   port: 2525,
   auth: {
-    user: "3d8dbda0ebfb4b",
-    pass: "05d4c6eba2b55e"
+    user: "5b2bd83897dfa0",
+    pass: "fd593e7f58bc8d"
   }
 });
 

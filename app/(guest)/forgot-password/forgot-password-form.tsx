@@ -13,6 +13,16 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
+
 export function ForgotPasswordForm({
   className,
   ...props
@@ -20,6 +30,7 @@ export function ForgotPasswordForm({
 
   const [identifier, setIdentifier] = useState("");
   const [message, setMessage] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,18 +38,19 @@ export function ForgotPasswordForm({
     const result = await validateUser(identifier);
 
     if (!result.success) {
-      setMessage("user on email id cannot be found");
+      setMessage("User with this email or username cannot be found.");
       return;
     }
 
-    let res = await forgotPasword(result.data)
+    const res = await forgotPasword(result.data);
 
-     if (!res.success) {
+    if (!res.success) {
       setMessage(res.message);
       return;
     }
-     
+
     setMessage("");
+    setDialogOpen(true);
   };
 
   return (
@@ -74,13 +86,34 @@ export function ForgotPasswordForm({
               )}
 
               <Field>
-                <Button type="submit">Submit</Button>
+                <Button type="submit" className="w-full">
+                  Submit
+                </Button>
               </Field>
 
             </FieldGroup>
           </form>
         </CardContent>
       </Card>
+
+      {/* Success Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Request Sent</DialogTitle>
+            <DialogDescription>
+              a password reset link has been sent to the registered email.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button onClick={() => setDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

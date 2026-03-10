@@ -131,7 +131,7 @@ export function ResetPasswordForm({
                 router.push("/")
               }}
             >
-              Go to Home
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

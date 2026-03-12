@@ -96,19 +96,9 @@ model Member {
 }
 
 model Settings {
-  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  siteTitle       String?
-  siteKeywords    String?
-  siteDescription String?
-  siteUrl         String?
-
-  isSMTP     Boolean? @default(false)
-  host       String?
-  username   String?
-  password   String?
-  port       Int?
-  auth       Boolean?
-  encryption String?
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key       String @unique
+  value     String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

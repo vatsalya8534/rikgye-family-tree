@@ -253,20 +253,6 @@ const MemberFormModal = ({
 
                 <FormField
                   control={form.control}
-                  name="spouseMother"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Spouse Mother</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Spouse mother name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="marriageDate"
                   render={({ field }) => (
                     <FormItem>

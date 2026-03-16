@@ -119,31 +119,37 @@ export async function getFamilyMembers(): Promise<FamilyMemberTree[]> {
   return roots;
 }
 
+
 export async function updateFamilyMember(data: FamilyMember) {
   const updated = await prisma.familyMember.update({
-    where: {
-      id: data.id,
-    },
+    where: { id: data.id },
     data: {
       name: data.name,
       image: data.image,
       gender: data.gender,
-      birthDate: data.birthDate,
+
+      birthDate: data.birthDate ? new Date(data.birthDate) : null,
       birthPlace: data.birthPlace,
+
       isAlive: data.isAlive,
       currentResidence: data.currentResidence,
-      deathDate: data.deathDate,
+
+      deathDate: data.deathDate ? new Date(data.deathDate) : null,
       deathPlace: data.deathPlace,
-      profession: data.profession,
-      email: data.email,
-      phone: data.phone,
-      parentId: data.parentId,
-      marriageDate: data.marriageDate,
+      causeOfDeath: data.causeOfDeath,
+
+      marriageDate: data.marriageDate ? new Date(data.marriageDate) : null,
       marriagePlace: data.marriagePlace,
+
       spouseFather: data.spouseFather,
       spouseMother: data.spouseMother,
       spouseMaidenName: data.spouseMaidenName,
-      causeOfDeath: data.causeOfDeath,
+
+      profession: data.profession,
+      email: data.email,
+      phone: data.phone,
+
+      parentId: data.parentId,
     },
   });
 

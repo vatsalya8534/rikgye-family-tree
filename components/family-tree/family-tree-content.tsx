@@ -93,8 +93,8 @@ const NodeCard: React.FC<NodeCardProps> = ({
     gender === "MALE"
       ? "hsl(210 60% 70%)"
       : gender === "FEMALE"
-        ? "hsl(340 60% 70%)"
-        : "hsl(var(--primary))";
+      ? "hsl(340 60% 70%)"
+      : "hsl(var(--primary))";
 
   return (
     <g>
@@ -183,8 +183,9 @@ const NodeCard: React.FC<NodeCardProps> = ({
             )}
 
             <p
-              className={`text-[10px] ${isAlive === "Yes" ? "text-green-600" : "text-red-500"
-                }`}
+              className={`text-[10px] ${
+                isAlive === "Yes" ? "text-green-600" : "text-red-500"
+              }`}
             >
               {isAlive === "Yes" ? "Alive" : "Deceased"}
             </p>
@@ -239,26 +240,9 @@ const TreeLayout: React.FC<TreeLayoutProps> = ({
 
   useEffect(() => {
     if (!containerRef.current) return;
-
     const { width } = containerRef.current.getBoundingClientRect();
     setTranslate({ x: width / 2, y: 120 });
   }, [members]);
-
-  if (members.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-6">
-        <p className="text-lg font-medium">No family members yet</p>
-
-        <button
-          onClick={() => onAdd()}
-          className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white"
-        >
-          <Plus size={16} />
-          Add First Member
-        </button>
-      </div>
-    );
-  }
 
   const data: RawNodeDatum =
     treeData.length === 1
@@ -288,16 +272,17 @@ const TreeLayout: React.FC<TreeLayoutProps> = ({
 /* ---------------- MAIN ---------------- */
 
 export const FamilyTreeContent: React.FC = () => {
-  const [mounted, setMounted] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
-  const [viewMember, setViewMember] = useState<FamilyMember | null>(null);
-
   const { activeFamily, addMember, editMember, deleteMember } =
     useFamilyContext();
 
   const members = activeFamily?.members ?? [];
 
+  const [loading, setLoading] = useState(true);
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+
+  const [viewMember, setViewMember] = useState<FamilyMember | null>(null);
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [defaultParentId, setDefaultParentId] = useState<string | null>(null);
@@ -305,19 +290,22 @@ export const FamilyTreeContent: React.FC = () => {
   const [deletingMember, setDeletingMember] =
     useState<FamilyMember | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
   const [showCannotDeleteDialog, setShowCannotDeleteDialog] = useState(false);
 
+  /* ---------------- INIT USER ---------------- */
+
   useEffect(() => {
-    const loadUser = async () => {
+    const init = async () => {
       const user = await getCurrentUser();
       setCurrentUserId(user?.data?.id ?? null);
       setCurrentUserRole(user?.data?.role ?? null);
+      setLoading(false);
     };
 
-    loadUser();
-    setMounted(true);
+    init();
   }, []);
+
+  /* ---------------- HANDLERS ---------------- */
 
   const handleAdd = (parent?: FamilyMember) => {
     setEditingMember(null);
@@ -353,18 +341,42 @@ export const FamilyTreeContent: React.FC = () => {
     if (!activeFamily || !deletingMember) return;
 
     await deleteFamilyMember(deletingMember.id, deleteChildren);
-
     deleteMember(activeFamily.id, deletingMember.id, deleteChildren);
 
     setShowDeleteDialog(false);
     setDeletingMember(null);
   };
 
-  const handleView = (member: FamilyMember) => {
-    setViewMember(member);
-  };
+  /* ---------------- LOADING UI ---------------- */
 
-  if (!mounted) return null;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] gap-3">
+        <div className="w-12 h-12 border-4 border-gray-300 border-t-primary rounded-full animate-spin"></div>
+        <p className="text-sm text-gray-500">Loading family tree...</p>
+      </div>
+    );
+  }
+
+  /* ---------------- EMPTY STATE ---------------- */
+
+  if (activeFamily && members.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-6">
+        <p className="text-lg font-medium">No family members yet</p>
+
+        <button
+          onClick={() => handleAdd()}
+          className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white"
+        >
+          <Plus size={16} />
+          Add First Member
+        </button>
+      </div>
+    );
+  }
+
+  /* ---------------- TREE ---------------- */
 
   return (
     <div className="flex-1 flex flex-col">
@@ -376,7 +388,7 @@ export const FamilyTreeContent: React.FC = () => {
           onAdd={handleAdd}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onView={handleView}
+          onView={setViewMember}
         />
       </div>
 
@@ -399,114 +411,7 @@ export const FamilyTreeContent: React.FC = () => {
         }}
         onConfirm={handleDeleteConfirm}
       />
-
-      {viewMember && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-          <div className="bg-white rounded-lg p-6 w-[380px] max-h-[80vh] overflow-y-auto">
-
-            <h2 className="text-lg font-semibold mb-4">{viewMember.name}</h2>
-
-            <div className="space-y-1 text-sm">
-
-              {viewMember.gender && (
-                <p><b>Gender:</b> {viewMember.gender}</p>
-              )}
-
-              {viewMember.birthDate && (
-                <p><b>Birth Date:</b> {new Date(viewMember.birthDate).toLocaleDateString()}</p>
-              )}
-
-              {viewMember.birthPlace && (
-                <p><b>Birth Place:</b> {viewMember.birthPlace}</p>
-              )}
-
-              {viewMember.isAlive !== undefined && (
-                <p>
-                  <b>Status:</b>{" "}
-                  {viewMember.isAlive ? "Alive" : "Deceased"}
-                </p>
-              )}
-
-              {viewMember.currentResidence && (
-                <p><b>Current Residence:</b> {viewMember.currentResidence}</p>
-              )}
-
-              {viewMember.profession && (
-                <p><b>Profession:</b> {viewMember.profession}</p>
-              )}
-
-              {viewMember.marriageDate && (
-                <p><b>Marriage Date:</b> {new Date(viewMember.marriageDate).toLocaleDateString()}</p>
-              )}
-
-              {viewMember.marriagePlace && (
-                <p><b>Marriage Place:</b> {viewMember.marriagePlace}</p>
-              )}
-
-              {viewMember.spouseFather && (
-                <p><b>Spouse Father:</b> {viewMember.spouseFather}</p>
-              )}
-
-              {viewMember.spouseMother && (
-                <p><b>Spouse Mother:</b> {viewMember.spouseMother}</p>
-              )}
-
-              {viewMember.spouseMaidenName && (
-                <p><b>Spouse Maiden Name:</b> {viewMember.spouseMaidenName}</p>
-              )}
-
-              {viewMember.deathDate && (
-                <p><b>Death Date:</b> {new Date(viewMember.deathDate).toLocaleDateString()}</p>
-              )}
-
-              {viewMember.deathPlace && (
-                <p><b>Death Place:</b> {viewMember.deathPlace}</p>
-              )}
-
-              {viewMember.causeOfDeath && (
-                <p><b>Cause of Death:</b> {viewMember.causeOfDeath}</p>
-              )}
-
-              {viewMember.email && (
-                <p><b>Email:</b> {viewMember.email}</p>
-              )}
-
-              {viewMember.phone && (
-                <p><b>Phone:</b> {viewMember.phone}</p>
-              )}
-
-            </div>
-
-            <button
-              onClick={() => setViewMember(null)}
-              className="mt-5 px-4 py-2 rounded-md bg-primary text-white w-full"
-            >
-              Close
-            </button>
-
-          </div>
-        </div>
-      )}
-
-      {showCannotDeleteDialog && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-          <div className="bg-white rounded-lg p-6 w-[320px] text-center">
-            <p className="text-sm font-medium">
-              Cannot delete a member who has children.
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Delete children first.
-            </p>
-
-            <button
-              onClick={() => setShowCannotDeleteDialog(false)}
-              className="mt-4 px-4 py-2 rounded-md bg-primary text-white"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+

@@ -58,10 +58,10 @@ export const familyMemberSchema = z.object({
   name: z.string().min(1, "Name is required"),
   image: z.string().min(1, "Image is required"),
   gender: z.enum(Object.values(Gender)),
-  birthDate: z.string().optional(),
-  birthPlace: z.string().optional(),
+  birthDate: z.string().min(1, "Date of Birth is required"),
+  birthPlace: z.string().min(1, "Place of Birth is requird"),
   isAlive: z.boolean(),
-  currentResidence: z.string().optional(),
+  currentResidence: z.string().min(1, "Current Residence is required"),
   deathDate: z.string().optional(),
   deathPlace: z.string().optional(),
   causeOfDeath: z.string().optional(),
@@ -76,3 +76,4 @@ export const familyMemberSchema = z.object({
   parentId: z.string().nullable().optional(),
   userId: z.string().nullable().optional(),
 });
+

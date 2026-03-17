@@ -31,7 +31,7 @@ const CMSForm = ({ data, update = false }: CMSFormProps) => {
   const id = data?.id
 
   const form = useForm<z.infer<typeof cmsSchema>>({
-    resolver: zodResolver(cmsSchema),
+    resolver: zodResolver(cmsSchema) as any,
     defaultValues: data || cmsDefaultValues
   })
 

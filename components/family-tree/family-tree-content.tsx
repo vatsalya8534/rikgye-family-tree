@@ -89,28 +89,27 @@ const NodeCard: React.FC<NodeCardProps> = ({
   const birthPlace = attrs?.birthPlace ?? "";
   const isAlive = attrs?.isAlive ?? "Yes";
 
-  const accent =
+  const accentBorder =
     gender === "MALE"
-      ? "#3b82f6"
+      ? "hsl(210 60% 70%)"
       : gender === "FEMALE"
-      ? "#ec4899"
-      : "#10b981";
+        ? "hsl(340 60% 70%)"
+        : "hsl(var(--primary))";
 
   return (
     <g>
       <foreignObject
-        x={-CARD_W / 2 - 60}
-        y={-CARD_H / 2 - 20}
-        width={CARD_W + 80}
-        height={CARD_H + 60}
+        x={-CARD_W / 2}
+        y={-CARD_H / 2 - 40}
+        width={CARD_W}
+        height={CARD_H + 100}
         style={{ overflow: "visible" }}
       >
         <div
-          className="group flex items-center gap-2"
-          style={{ pointerEvents: "all" }}
+          className="relative flex flex-col items-center group"
+          style={{ width: CARD_W, pointerEvents: "all" }}
         >
-          {/* ACTION BUTTONS LEFT */}
-          <div className="flex flex-col gap-2 opacity-0 -translate-x-2 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 group-hover:pointer-events-auto transition-all duration-200">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 flex gap-1 z-50 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all">
 
             {canAdd && (
               <button
@@ -118,7 +117,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
                   e.stopPropagation();
                   onAdd(member);
                 }}
-                className="w-7 h-7 rounded-full bg-emerald-500 text-white shadow hover:scale-110 flex items-center justify-center"
+                className="w-7 h-7 rounded-full bg-white shadow flex items-center justify-center hover:scale-110"
               >
                 <Plus size={14} />
               </button>
@@ -130,7 +129,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
                   e.stopPropagation();
                   onEdit(member);
                 }}
-                className="w-7 h-7 rounded-full bg-blue-500 text-white shadow hover:scale-110 flex items-center justify-center"
+                className="w-7 h-7 rounded-full bg-white shadow flex items-center justify-center hover:scale-110"
               >
                 <Pencil size={14} />
               </button>
@@ -142,28 +141,28 @@ const NodeCard: React.FC<NodeCardProps> = ({
                   e.stopPropagation();
                   onDelete(member);
                 }}
-                className="w-7 h-7 rounded-full bg-red-500 text-white shadow hover:scale-110 flex items-center justify-center"
+                className="w-7 h-7 rounded-full bg-white shadow flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white hover:scale-110"
               >
                 <Trash2 size={14} />
               </button>
             )}
           </div>
 
-          {/* CARD */}
           <div
             onClick={() => onView(member)}
-            className="rounded-xl bg-white border shadow-md hover:shadow-lg transition-all p-3 flex flex-col items-center gap-1.5 cursor-pointer"
+            className="mt-10 rounded-xl border bg-white shadow-sm p-3 flex flex-col items-center gap-1.5 cursor-pointer"
             style={{
               width: CARD_W,
-              borderTop: `4px solid ${accent}`,
+              borderTopColor: accentBorder,
+              borderTopWidth: 3,
+              pointerEvents: "all",
             }}
           >
             {image ? (
               <img
                 src={image}
                 alt={nodeDatum.name}
-                className="w-12 h-12 rounded-full object-cover border-2"
-                style={{ borderColor: accent }}
+                className="w-12 h-12 rounded-full object-cover border-2 border-blue-400"
               />
             ) : (
               <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
@@ -184,7 +183,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
             )}
 
             <p
-              className={`text-[10px] font-medium ${isAlive === "Yes" ? "text-emerald-600" : "text-red-500"
+              className={`text-[10px] ${isAlive === "Yes" ? "text-green-600" : "text-red-500"
                 }`}
             >
               {isAlive === "Yes" ? "Alive" : "Deceased"}
@@ -269,7 +268,7 @@ const TreeLayout: React.FC<TreeLayoutProps> = ({
   return (
     <div
       ref={containerRef}
-      className="w-full flex-1"
+      className="w-full flex-1 rounded-lg border bg-background"
       style={{ height: "calc(100vh - 160px)", minHeight: 400 }}
     >
       <Tree
@@ -299,7 +298,7 @@ export const FamilyTreeContent: React.FC = () => {
     useFamilyContext();
 
   const members = activeFamily?.members ?? [];
-
+  
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [defaultParentId, setDefaultParentId] = useState<string | null>(null);

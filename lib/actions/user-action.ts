@@ -12,7 +12,6 @@ import { sendMail } from "../mail";
 import bcrypt from "bcrypt"
 
 
-
 // get users
 export async function getUsers() {
    return await prisma.user.findMany({
@@ -251,68 +250,125 @@ export async function logoutUser() {
 
 
 export async function forgotPasword(user: any) {
-   try {
-      await sendMail({
-         to: user.email as string,
-         subject: "Forgot Password",
-         html: `
-         Please click the link to reset the password
-         <a href="${process.env.NEXT_APP_SERVER_URL + "/reset-password/" + user.id}">reset password</a>
-        `,
-      });
+  try {
+    const template = await prisma.template.findFirst({
+      where: { name: "Forgot password" }, 
+    });
 
+    if (!template) {
       return {
-         success: true,
-         message: "Please check your inbox"
-      }
-   } catch (error) {
-      return {
-         success: false,
-         message: "Something went wrong"
-      }
-   }
+        success: false,
+        message: "Email template not found",
+      };
+    }
+
+    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password/${user.id}`;
+
+    let emailHtml : any = template.description;
+
+    emailHtml = emailHtml
+      .replace(/\{\{name\}\}/g, user.name || "User")
+      .replace(/\{\{reset_link\}\}/g, resetLink);
+
+    await sendMail({
+      to: user.email,
+      subject: "Reset Your Password",
+      html: emailHtml,
+    });
+
+    return {
+      success: true,
+      message: "Please check your inbox",
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: "Something went wrong",
+    };
+  }
 }
-
 export async function updatePassword(userId: string, password: string) {
-   try {
+  try {
+    const user = await getUserById(userId);
 
-      let user = await getUserById(userId)
-
-      if (user.success) {
-         const hashedPassword = await bcrypt.hash(password, 10)
-
-         await prisma.user.update({
-            where: {
-               id: userId
-            },
-            data: {
-               password: password
-            }
-         })
-
-         await sendMail({
-            to: user?.data?.email as string,
-            subject: "Reset Password",
-            html: `
-        Password has been reset`,
-         });
-
-         return { success: true }
-      } else {
-         return {
-            success: false,
-            message: "user not found"
-         }
-      }
-
-
-   } catch (error: any) {
+    if (!user.success) {
       return {
-         success: false,
-         message: error.message
-      }
-   }
+        success: false,
+        message: "User not found",
+      };
+    }
 
+    // ✅ Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    // Prepare login link
+    const loginLink = `${process.env.NEXT_PUBLIC_APP_URL}`;
+
+    // Get template from DB
+    const template = await prisma.template.findFirst({
+      where: { name: "Password Updated" },
+    });
+
+    if (!template) {
+      console.warn("Email template not found");
+
+      return {
+        success: true,
+        message: "Password updated (email not sent)",
+      };
+    }
+
+    if (!user.data?.email) {
+      return {
+        success: true,
+        message: "Password updated but email missing",
+      };
+    }
+
+    let emailHtml : any = template.description;
+
+    // Replace dynamic placeholders
+    emailHtml = emailHtml
+      .replace(/\{\{name\}\}/g, user.data?.firstName || "User")
+      .replace(/\{\{login_link\}\}/g, loginLink);
+
+    // Send email safely
+    try {
+      await sendMail({
+        to: user.data.email,
+        subject: "Password Updated",
+        html: emailHtml,
+      });
+    } catch (mailError) {
+      console.error("Mail error:", mailError);
+
+      return {
+        success: true,
+        message: "Password updated but email failed",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Password updated successfully",
+    };
+  } catch (error: any) {
+    console.error(error);
+    return {
+      success: false,
+      message: "Something went wrong",
+    };
+  }
 }
 
 export async function updateProfile(user: any, id: string) {

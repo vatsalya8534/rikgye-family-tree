@@ -165,46 +165,46 @@ export function ForgotPasswordForm({
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-  <DialogContent className="max-w-sm border border-emerald-200 shadow-lg">
+        <DialogContent className="max-w-sm border border-emerald-200 shadow-lg">
 
-    <DialogHeader className="items-center text-center space-y-3">
+          <DialogHeader className="items-center text-center space-y-3">
 
-      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 text-emerald-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-emerald-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
 
-      <DialogTitle className="text-xl font-semibold text-gray-800">
-        Request Sent
-      </DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-gray-800">
+              Request Sent
+            </DialogTitle>
 
-      <DialogDescription className="text-sm text-muted-foreground">
-        A password reset link has been sent to your registered email address.
-      </DialogDescription>
+            <DialogDescription className="text-sm text-muted-foreground">
+              A password reset link has been sent to your registered email address.
+            </DialogDescription>
 
-    </DialogHeader>
+          </DialogHeader>
 
-    <DialogFooter className="mt-4">
+          <DialogFooter className="mt-4">
 
-      <Button
-        onClick={() => setDialogOpen(false)}
-        className="w-full bg-emerald-600 hover:bg-emerald-700"
-      >
-        Close
-      </Button>
+            <Button
+              onClick={() => setDialogOpen(false)}
+              className="w-full bg-emerald-600 hover:bg-emerald-700"
+            >
+              Close
+            </Button>
 
-    </DialogFooter>
+          </DialogFooter>
 
-  </DialogContent>
-</Dialog>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

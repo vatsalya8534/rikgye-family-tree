@@ -57,7 +57,6 @@ type SettingsForm = {
 };
 
 export default function SettingsPage() {
-
   const [formData, setFormData] = useState<any>({
     siteTitle: "",
     siteKeywords: "",
@@ -70,7 +69,7 @@ export default function SettingsPage() {
     username: "",
     password: "",
     port: null,
-    encryption: ""
+    encryption: "",
   });
 
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -86,7 +85,10 @@ export default function SettingsPage() {
   const [templateLoading, setTemplateLoading] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>, field: "logo" | "favicon") => {
+  const handleFile = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: "logo" | "favicon",
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -263,7 +265,7 @@ export default function SettingsPage() {
                 {formData.logo && (
                   <div className="border rounded-md p-2 w-fit bg-green-50">
                     <img
-                      src={ "/api/" + formData.logo}
+                      src={"/api/" + formData.logo}
                       alt="logo"
                       className="h-12 object-contain"
                     />
@@ -285,7 +287,7 @@ export default function SettingsPage() {
                 {formData.favicon && (
                   <div className="border rounded-md p-2 w-fit bg-green-50">
                     <img
-                      src={ "/api/" + formData.favicon}
+                      src={"/api/" + formData.favicon}
                       alt="favicon"
                       className="h-12 object-contain"
                     />
@@ -298,7 +300,6 @@ export default function SettingsPage() {
                   onChange={(e) => handleFile(e, "favicon")}
                 />
               </div>
-
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-green-800">
@@ -347,7 +348,6 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* MAIL */}
         {/* MAIL */}
         <TabsContent value="mail">
           <Card className="p-6 space-y-6 w-full bg-white border border-green-200 shadow-md">
@@ -403,12 +403,16 @@ export default function SettingsPage() {
                   <label className="text-sm font-medium text-green-800">
                     Encryption
                   </label>
-                  <Input placeholder="TLS / SSL" value={formData.encryption} onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      encryption: e.target.value,
-                    })
-                  } />
+                  <Input
+                    placeholder="TLS / SSL"
+                    value={formData.encryption}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        encryption: e.target.value,
+                      })
+                    }
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -474,8 +478,45 @@ export default function SettingsPage() {
                     init={{
                       height: 300,
                       menubar: false,
+                      plugins: [
+                        "advlist",
+                        "autolink",
+                        "lists",
+                        "link",
+                        "image",
+                        "charmap",
+                        "preview",
+                        "anchor",
+                        "searchreplace",
+                        "visualblocks",
+                        "code",
+                        "fullscreen",
+                        "insertdatetime",
+                        "media",
+                        "table",
+                        "help",
+                        "wordcount",
+                        "codesample",
+                      ],
+                      toolbar:
+                        "undo redo | blocks | bold italic underline | alignleft aligncenter alignright | " +
+                        "bullist numlist | link image | codesample | code | fullscreen",
+                      content_style:
+                        "body { font-family: Arial, sans-serif; font-size:14px }",
                     }}
                   />
+
+                  <div className="border p-4 rounded-md bg-green-50 text-green-800">
+                    <p className="font-semibold mb-2">Preview:</p>
+                    <div
+                      className="text-sm"
+                      dangerouslySetInnerHTML={{
+                        __html: templateDescription
+                          .replace(/\{\{name\}\}/g, "John Doe")
+                          .replace(/\{\{reset_link\}\}/g, "#"),
+                      }}
+                    />
+                  </div>
 
                   <Button
                     onClick={createTemplate}
@@ -504,11 +545,15 @@ export default function SettingsPage() {
                   <h4 className="font-semibold text-green-800">{t.name}</h4>
 
                   <div
-                    className="text-sm text-green-700 mt-2"
-                    dangerouslySetInnerHTML={{ __html: t.description }}
+                    className="text-sm text-green-700 mt-2 "
+                    dangerouslySetInnerHTML={{
+                      __html: t.description
+                        .replace(/\{\{name\}\}/g, "John Doe")
+                        .replace(/\{\{reset_link\}\}/g, "#"),
+                    }}
                   />
 
-                  <div className="absolute top-3 right-3 flex gap-2">
+                  <div className="absolute top-3 right-3 flex gap-2 ">
                     <Button
                       size="icon"
                       variant="secondary"
@@ -560,37 +605,65 @@ export default function SettingsPage() {
       </Dialog>
       {/* EDIT TEMPLATE DIALOG */}
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogTitle>Edit Template</DialogTitle>
-          <DialogDescription>Update template content</DialogDescription>
+     <Dialog open={editOpen} onOpenChange={setEditOpen}>
+  <DialogContent className="w-[95vw] max-w-none h-[100vh] overflow-y-auto p-6">
+    <DialogTitle>Edit Template</DialogTitle>
+    <DialogDescription>Update template content</DialogDescription>
 
-          <div className="space-y-4 mt-4">
-            <Input
-              placeholder="Template Name"
-              value={editTemplateName}
-              onChange={(e) => setEditTemplateName(e.target.value)}
-            />
+    <div className="space-y-4 mt-4">
+      {/* Template Name */}
+      <Input
+        placeholder="Template Name"
+        value={editTemplateName}
+        onChange={(e) => setEditTemplateName(e.target.value)}
+      />
 
-            <Editor
-              apiKey="9b9wji2lpvz93l03y7ai6kb09gpxzcpsnrxemixdpbpsuq8l"
-              value={editTemplateDescription}
-              onEditorChange={(content) => setEditTemplateDescription(content)}
-              init={{
-                height: 300,
-                menubar: false,
-              }}
-            />
+      {/* TinyMCE Editor */}
+      <Editor
+        apiKey="9b9wji2lpvz93l03y7ai6kb09gpxzcpsnrxemixdpbpsuq8l"
+        value={editTemplateDescription}
+        onEditorChange={(content) => setEditTemplateDescription(content)}
+        init={{
+          height: 600,
+          menubar: false,
+          plugins: [
+            "advlist",
+            "autolink",
+            "lists",
+            "link",
+            "image",
+            "charmap",
+            "preview",
+            "anchor",
+            "searchreplace",
+            "visualblocks",
+            "code",
+            "fullscreen",
+            "insertdatetime",
+            "media",
+            "table",
+            "help",
+            "wordcount",
+            "codesample",
+          ],
+          toolbar:
+            "undo redo | blocks | bold italic underline | alignleft aligncenter alignright | " +
+            "bullist numlist | link image | codesample | code | fullscreen",
+          content_style:
+            "body { font-family: Arial, sans-serif; font-size:14px }",
+        }}
+      />
 
-            <Button
-              onClick={updateTemplate}
-              className="bg-green-600 hover:bg-green-700 text-white w-full"
-            >
-              Update Template
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Update Button */}
+      <Button
+        onClick={updateTemplate}
+        className="bg-green-600 hover:bg-green-700 text-white w-full mt-2"
+      >
+        Update Template
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
     </div>
   );
 }

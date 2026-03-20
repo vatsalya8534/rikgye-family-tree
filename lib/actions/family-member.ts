@@ -25,12 +25,12 @@ export interface FamilyMemberTree {
   email?: string;
   phone?: string;
   parentId: string | null;
+  spouseId: string | null;
   userId: string;
   children: FamilyMemberTree[];
 }
 
-
-export async function createFamilyMember(data: Omit<FamilyMember, "id">) {
+export async function createFamilyMember(data: Omit<any, "id">) {
 
   const currentUser = await getCurrentUser();
 
@@ -103,13 +103,13 @@ export async function getFamilyMembers(): Promise<FamilyMemberTree[]> {
   }));
 
   const map = new Map<string, FamilyMemberTree>();
-  const roots: FamilyMemberTree[] = [];
+  const roots: any = [];
 
-  formattedMembers.forEach((m) => map.set(m.id, m));
+  formattedMembers.forEach((m: any) => map.set(m.id, m));
 
   formattedMembers.forEach((m) => {
     if (m.parentId) {
-      const parent = map.get(m.parentId);
+      const parent: any = map.get(m.parentId);
       if (parent) parent.children.push(m);
     } else {
       roots.push(m);
@@ -120,7 +120,7 @@ export async function getFamilyMembers(): Promise<FamilyMemberTree[]> {
 }
 
 
-export async function updateFamilyMember(data: FamilyMember) {
+export async function updateFamilyMember(data: any) {
   const updated = await prisma.familyMember.update({
     where: { id: data.id },
     data: {

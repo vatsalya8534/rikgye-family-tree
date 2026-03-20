@@ -92,4 +92,5 @@ export const familyMemberSchema = z.object({
   phone: z.string().optional(),
   parentId: z.string().nullable().optional(),
   userId: z.string().nullable().optional(),
+   relation: z.string().optional(),
 });

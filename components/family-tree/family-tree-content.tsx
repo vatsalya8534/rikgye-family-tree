@@ -110,7 +110,7 @@ const NodeCard = ({
   return (
     <g>
       <foreignObject
-        x={-CARD_W / 2 }
+        x={-CARD_W / 2}
         y={-CARD_H / 2}
         width={CARD_W + 80}
         height={CARD_H}
@@ -125,25 +125,25 @@ const NodeCard = ({
   opacity-0 group-hover:opacity-100
   -translate-x-2 group-hover:translate-x-0
   transition-all duration-300 z-20"
->
-            <button onClick={(e)=>{e.stopPropagation();onAdd(member)}} className="p-2 hover:bg-green-500 hover:text-white rounded-lg transition">
-              <Plus size={14}/>
+          >
+            <button onClick={(e) => { e.stopPropagation(); onAdd(member) }} className="p-2 hover:bg-green-500 hover:text-white rounded-lg transition">
+              <Plus size={14} />
             </button>
 
             {canEdit && (
-              <button onClick={(e)=>{e.stopPropagation();onEdit(member)}} className="p-2 hover:bg-blue-500 hover:text-white rounded-lg transition">
-                <Pencil size={14}/>
+              <button onClick={(e) => { e.stopPropagation(); onEdit(member) }} className="p-2 hover:bg-blue-500 hover:text-white rounded-lg transition">
+                <Pencil size={14} />
               </button>
             )}
 
-            <button onClick={(e)=>{e.stopPropagation();onDelete(member)}} className="p-2 hover:bg-red-500 hover:text-white rounded-lg transition">
-              <Trash2 size={14}/>
+            <button onClick={(e) => { e.stopPropagation(); onDelete(member) }} className="p-2 hover:bg-red-500 hover:text-white rounded-lg transition">
+              <Trash2 size={14} />
             </button>
           </div>
 
           {/* CARD */}
           <div
-            onClick={()=>onView(member)}
+            onClick={() => onView(member)}
             className={` relative flex flex-col items-center cursor-pointer
               transition-all duration-300 ease-out
               hover:scale-105 
@@ -260,6 +260,7 @@ const TreeLayout = ({
   );
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const update = () => {
       if (!containerRef.current) return;
       const { width } = containerRef.current.getBoundingClientRect();
@@ -372,7 +373,7 @@ export const FamilyTreeContent = () => {
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        onView={() => {}}
+        onView={() => { }}
       />
 
       <MemberFormModal

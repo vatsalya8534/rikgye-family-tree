@@ -100,7 +100,7 @@ const MemberFormModal = ({
   const handleFormSubmit: SubmitHandler<FormData> = async (values) => {
     const imageUrl = typeof values.image === "string" ? values.image : "";
 
-    let parentId = values.parentId ?? null;
+    let parentId :any = values.parentId ?? null;
     let spouseId: string | null = null;
     const relation = values.relation;
 

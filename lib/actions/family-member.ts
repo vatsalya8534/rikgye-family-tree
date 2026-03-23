@@ -29,38 +29,77 @@ export interface FamilyMemberTree {
   userId: string;
   children: FamilyMemberTree[];
 }
-
 export async function createFamilyMember(data: Omit<any, "id">) {
-
   const currentUser = await getCurrentUser();
 
-  const member = await prisma.familyMember.create({
-    data: {
-      name: data.name,
-      image: data.image,
-      gender: data.gender,
-      birthDate: data.birthDate ? new Date(data.birthDate) : null,
-      birthPlace: data.birthPlace,
-      isAlive: data.isAlive,
-      currentResidence: data.currentResidence,
-      deathDate: data.deathDate ? new Date(data.deathDate) : null,
-      deathPlace: data.deathPlace,
-      causeOfDeath: data.causeOfDeath,
-      marriageDate: data.marriageDate ? new Date(data.marriageDate) : null,
-      marriagePlace: data.marriagePlace,
-      spouseMaidenName: data.spouseMaidenName,
-      spouseFather: data.spouseFather,
-      spouseMother: data.spouseMother,
-      profession: data.profession,
-      email: data.email,
-      phone: data.phone,
-      parent: data.parentId ? { connect: { id: data.parentId }, } : undefined,
-      user: {
-        connect: { id: currentUser?.data?.id },
+  if (!currentUser?.data?.id) {
+    throw new Error("User not authenticated");
+  }
+
+  const parentId = data.parentId ?? null;
+
+  return await prisma.$transaction(async (tx) => {
+    // Get existing member
+    const existingMember = parentId
+      ? await tx.familyMember.findUnique({
+          where: { id: parentId },
+        })
+      : null;
+
+    let parentToAssign: string | null = null;
+
+    if (data.relation === "FATHER") {
+      parentToAssign = existingMember?.parentId ?? null;
+    } else {
+      parentToAssign = parentId;
+    }
+
+    // ✅ Create new member
+    const member = await tx.familyMember.create({
+      data: {
+        name: data.name,
+        image: data.image,
+        gender: data.gender,
+        birthDate: data.birthDate ? new Date(data.birthDate) : null,
+        birthPlace: data.birthPlace,
+        isAlive: data.isAlive,
+        currentResidence: data.currentResidence,
+        deathDate: data.deathDate ? new Date(data.deathDate) : null,
+        deathPlace: data.deathPlace,
+        causeOfDeath: data.causeOfDeath,
+        marriageDate: data.marriageDate ? new Date(data.marriageDate) : null,
+        marriagePlace: data.marriagePlace,
+        spouseMaidenName: data.spouseMaidenName,
+        spouseFather: data.spouseFather,
+        spouseMother: data.spouseMother,
+        profession: data.profession,
+        email: data.email,
+        phone: data.phone,
+
+        parent: parentToAssign
+          ? { connect: { id: parentToAssign } }
+          : undefined,
+
+        user: {
+          connect: { id: currentUser.data.id },
+        },
       },
-    },
+    });
+
+    // ✅ Relink child → new father (CRITICAL)
+    if (data.relation === "FATHER" && parentId) {
+      await tx.familyMember.update({
+        where: { id: parentId },
+        data: {
+          parent: {
+            connect: { id: member.id },
+          },
+        },
+      });
+    }
+
+    return member;
   });
-  return member;
 }
 
 export async function getFamilyMembers(): Promise<FamilyMemberTree[]> {

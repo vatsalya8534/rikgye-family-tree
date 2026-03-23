@@ -67,10 +67,10 @@ const MemberFormModal = ({
     defaultValues: editingMember
       ? { ...familyMemberDefaultValues, ...editingMember }
       : {
-          ...familyMemberDefaultValues,
-          parentId: defaultParentId ?? null,
-          relation: "",
-        },
+        ...familyMemberDefaultValues,
+        parentId: defaultParentId ?? null,
+        relation: "",
+      },
   });
 
   useEffect(() => {
@@ -100,7 +100,7 @@ const MemberFormModal = ({
   const handleFormSubmit: SubmitHandler<FormData> = async (values) => {
     const imageUrl = typeof values.image === "string" ? values.image : "";
 
-    let parentId :any = values.parentId ?? null;
+    let parentId: any = values.parentId ?? null;
     let spouseId: string | null = null;
     const relation = values.relation;
 
@@ -125,25 +125,16 @@ const MemberFormModal = ({
 
     // ===== CREATE / UPDATE =====
     if (!editingMember) {
-      const isParent = relation === "FATHER" || relation === "MOTHER";
 
       const newMember: any = await createFamilyMember({
         ...values,
         relation,
         spouseId,
-        parentId: isParent ? null : parentId,
+        parentId: values.parentId,
         image: imageUrl,
         gender: values.gender ?? Gender.OTHER,
         userId: values.userId ?? null,
       });
-
-      // 🔥 FIX: link child to new parent
-      if (isParent && values.parentId) {
-        await updateFamilyMember({
-          id: values.parentId, // child
-          parentId: newMember.id, // new parent
-        });
-      }
 
       onSubmit(newMember);
     } else {
@@ -229,13 +220,13 @@ const MemberFormModal = ({
                   control={form.control}
                   name="relation"
                   render={({ field }) => (
-                    <FormItem className="col-span-2">
+                    <FormItem>
                       <FormLabel>Relation</FormLabel>
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select relation" />
                         </SelectTrigger>
                         <SelectContent>
@@ -263,7 +254,7 @@ const MemberFormModal = ({
                         value={field.value}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -448,12 +439,13 @@ const MemberFormModal = ({
                     <FormItem className="col-span-2">
                       <FormLabel>Select Person</FormLabel>
                       <Select
+                        disabled
                         value={form.getValues("parentId") ?? "__none__"}
                         onValueChange={(v) =>
                           form.setValue("parentId", v === "__none__" ? null : v)
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

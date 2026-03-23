@@ -329,7 +329,7 @@ export const FamilyTreeContent = () => {
     };
     loadUser();
     setMounted(true);
-  }, []);
+  }, [members.length]);
 
   const handleAdd = (parent?: FamilyMember) => {
     setEditingMember(null);

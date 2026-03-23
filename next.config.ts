@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
         pathname: "/uploads/**",
       },
       {
-        pathname: "/api/uploads/**",
+        pathname: "/api/**",
       },
     ],
   },

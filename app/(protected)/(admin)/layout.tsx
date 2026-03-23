@@ -19,29 +19,37 @@ export default async function RootLayout({
         redirect("/")
     }
 
-    if(session.user.role !== Role.ADMIN) {
-      notFound()
+    if (session.user.role !== Role.ADMIN) {
+        notFound()
     }
 
     return (
         <SidebarProvider>
             <AppSidebar />
-            <SidebarInset>
-                <header className="flex h-16 shrink-0 items-center border-b  transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+
+            <SidebarInset className="flex flex-col h-screen">
+
+                {/* ✅ FIXED HEADER */}
+                <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center border-b bg-background">
                     <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 my-2">
                         <SidebarTrigger className="-ml-1" />
+
                         <Separator
                             orientation="vertical"
                             className="mx-2 data-[orientation=vertical]:h-4"
                         />
+
                         <div className="ml-auto flex items-center">
                             <UserMenu />
                         </div>
                     </div>
                 </header>
-                <div className="flex flex-1 flex-col bg-gradient-to-b from-green-50 to-emerald-100 ">
+
+                {/* ✅ ONLY THIS SCROLLS */}
+                <div className="flex-1 overflow-auto bg-gradient-to-b from-green-50 to-emerald-100">
                     {children}
                 </div>
+
             </SidebarInset>
         </SidebarProvider>
     );

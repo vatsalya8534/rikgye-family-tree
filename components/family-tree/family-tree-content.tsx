@@ -344,79 +344,77 @@ export const FamilyTreeContent = () => {
 
       {/* DETAILS MODAL */}
       {showDetails && selectedMember && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
-    <div className="relative w-[420px] bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
+          <div className="relative w-[420px] bg-white rounded-3xl shadow-2xl overflow-hidden">
 
-      {/* HEADER */}
-      <div
-        className={`h-28 ${
-          selectedMember.gender === "MALE"
-            ? "bg-gradient-to-r from-blue-500 to-indigo-500"
-            : "bg-gradient-to-r from-pink-500 to-rose-500"
-        }`}
-      >
-        <button
-          onClick={() => setShowDetails(false)}
-          className="absolute top-3 right-3 text-white text-lg"
-        >
-          ✕
-        </button>
-      </div>
+            {/* HEADER */}
+            <div
+              className={`h-28 ${selectedMember.gender === "MALE"
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-500"
+                  : "bg-gradient-to-r from-pink-500 to-rose-500"
+                }`}
+            >
+              <button
+                onClick={() => setShowDetails(false)}
+                className="absolute top-3 right-3 text-white text-lg"
+              >
+                ✕
+              </button>
+            </div>
 
-      {/* PROFILE IMAGE */}
-      <div className="flex justify-center -mt-14">
-        <img
-          src={selectedMember.image || ""}
-          className={`w-28 h-28 rounded-full object-cover border-[4px] ${
-            selectedMember.gender === "MALE" ? "border-blue-400" : "border-pink-400"
-          } bg-white`}
-        />
-      </div>
+            {/* PROFILE IMAGE */}
+            <div className="flex justify-center -mt-14">
+              <img
+                src={selectedMember.image || ""}
+                className={`w-28 h-28 rounded-full object-cover border-[4px] ${selectedMember.gender === "MALE" ? "border-blue-400" : "border-pink-400"
+                  } bg-white`}
+              />
+            </div>
 
-      {/* NAME + RELATION */}
-      <div className="text-center mt-3">
-        <h2 className="text-xl font-semibold">{selectedMember.name}</h2>
-        <p className="text-xs text-gray-500">
-          {selectedMember.relationType || "Family Member"}
-        </p>
-      </div>
+            {/* NAME + RELATION */}
+            <div className="text-center mt-3">
+              <h2 className="text-xl font-semibold">{selectedMember.name}</h2>
+              <p className="text-xs text-gray-500">
+                {selectedMember.relation || "Family Member"}
+              </p>
+            </div>
 
-      {/* DETAILS */}
-      <div className="grid grid-cols-2 gap-3 p-6 text-sm">
+            {/* DETAILS */}
+            <div className="grid grid-cols-2 gap-3 p-6 text-sm">
 
-        <div>Gender: {selectedMember.gender}</div>
-        <div>Status: {selectedMember.isAlive ? "Alive" : "Dead"}</div>
+              <div>Gender: {selectedMember.gender}</div>
+              <div>Status: {selectedMember.isAlive ? "Alive" : "Dead"}</div>
 
-        <div>Birth Date: {selectedMember.birthDate ? new Date(selectedMember.birthDate).toLocaleDateString() : "—"}</div>
-        <div>Birth Place: {selectedMember.birthPlace || "—"}</div>
+              <div>Birth Date: {selectedMember.birthDate ? new Date(selectedMember.birthDate).toLocaleDateString() : "—"}</div>
+              <div>Birth Place: {selectedMember.birthPlace || "—"}</div>
 
-        {!selectedMember.isAlive && (
-          <>
-            <div>Death Date: {selectedMember.deathDate ? new Date(selectedMember.deathDate).toLocaleDateString() : "—"}</div>
-            <div>Cause of Death: {selectedMember.causeOfDeath || "—"}</div>
-          </>
-        )}
+              {!selectedMember.isAlive && (
+                <>
+                  <div>Death Date: {selectedMember.deathDate ? new Date(selectedMember.deathDate).toLocaleDateString() : "—"}</div>
+                  <div>Cause of Death: {selectedMember.causeOfDeath || "—"}</div>
+                </>
+              )}
 
-        <div>Current Residence: {selectedMember.currentResidence || "—"}</div>
-        <div>Profession: {selectedMember.profession || "—"}</div>
+              <div>Current Residence: {selectedMember.currentResidence || "—"}</div>
+              <div>Profession: {selectedMember.profession || "—"}</div>
 
-        <div>Marriage Date: {selectedMember.marriageDate ? new Date(selectedMember.marriageDate).toLocaleDateString() : "—"}</div>
-        <div>Marriage Place: {selectedMember.marriagePlace || "—"}</div>
+              <div>Marriage Date: {selectedMember.marriageDate ? new Date(selectedMember.marriageDate).toLocaleDateString() : "—"}</div>
+              <div>Marriage Place: {selectedMember.marriagePlace || "—"}</div>
 
 
-        
 
-        <div>Email: {selectedMember.email || "—"}</div>
-        <div>Phone: {selectedMember.phone || "—"}</div>
 
-        <div className="col-span-2 text-xs break-all">ID: {selectedMember.id}</div>
-        {selectedMember.parentId && (
-          <div className="col-span-2 text-xs break-all">Parent ID: {selectedMember.parentId}</div>
-        )}
-      </div>
-    </div>
-  </div>
-)}
+              <div>Email: {selectedMember.email || "—"}</div>
+              <div>Phone: {selectedMember.phone || "—"}</div>
+
+              <div className="col-span-2 text-xs break-all">ID: {selectedMember.id}</div>
+              {selectedMember.parentId && (
+                <div className="col-span-2 text-xs break-all">Parent ID: {selectedMember.parentId}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <MemberFormModal
         open={showMemberForm}

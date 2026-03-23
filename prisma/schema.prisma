@@ -60,6 +60,7 @@ model FamilyMember {
   gender           Gender?
   birthDate        DateTime?
   birthPlace       String?
+  relation         String?
   isAlive          Boolean   @default(true)
   currentResidence String?
 
@@ -77,6 +78,7 @@ model FamilyMember {
   profession String?
   email      String?
   phone      String?
+  
 
   userId   String  @db.Uuid
   parentId String? @db.Uuid

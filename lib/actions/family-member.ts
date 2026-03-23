@@ -38,32 +38,23 @@ export async function createFamilyMember(data: Omit<any, "id">) {
     data: {
       name: data.name,
       image: data.image,
-
       gender: data.gender,
-
       birthDate: data.birthDate ? new Date(data.birthDate) : null,
       birthPlace: data.birthPlace,
-
       isAlive: data.isAlive,
       currentResidence: data.currentResidence,
-
       deathDate: data.deathDate ? new Date(data.deathDate) : null,
       deathPlace: data.deathPlace,
       causeOfDeath: data.causeOfDeath,
-
       marriageDate: data.marriageDate ? new Date(data.marriageDate) : null,
       marriagePlace: data.marriagePlace,
-
       spouseMaidenName: data.spouseMaidenName,
       spouseFather: data.spouseFather,
       spouseMother: data.spouseMother,
-
       profession: data.profession,
       email: data.email,
       phone: data.phone,
-
       parent: data.parentId ? { connect: { id: data.parentId }, } : undefined,
-
       user: {
         connect: { id: currentUser?.data?.id },
       },

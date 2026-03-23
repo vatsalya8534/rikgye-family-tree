@@ -14,6 +14,14 @@ enum Gender {
   OTHER
 }
 
+enum Relationship {
+  PARENT
+  CHILD
+  SPOUSE
+  STEP_CHILD
+  EX_SPOUSE
+}
+
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"

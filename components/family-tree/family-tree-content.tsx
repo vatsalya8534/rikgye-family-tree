@@ -280,8 +280,8 @@ const TreeLayout = ({
   return (
     <div
       ref={containerRef}
-      className="w-full h-[85vh]
-      bg-gradient-to-br from-slate-50 via-white to-indigo-50"
+      className="w-full h-screen
+      bg-gradient-to-br from-slate-50 bg-gradient-to-b from-green-50 to-emerald-100"
     >
       <Tree
         data={data}
@@ -296,6 +296,7 @@ const TreeLayout = ({
         zoomable
         transitionDuration={400}
         collapsible={false}
+        zoom={0.5}  
       />
     </div>
   );

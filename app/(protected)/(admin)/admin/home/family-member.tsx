@@ -35,7 +35,7 @@ const FamilyMembers = ({ data }: { data: any }) => {
                         >
 
                             <TableCell className="font-medium text-foreground">
-                                <Image src={d.image} height={50} width={50} alt='' />
+                                <Image src={d.image[0]} height={50} width={50} alt='' />
                             </TableCell>
 
                             <TableCell className="text-muted-foreground max-w-[400px] truncate">

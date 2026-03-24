@@ -27,7 +27,7 @@ export function Logo() {
           <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md">
             {setting?.logo && (
               <Image
-                src={ "/api/" + setting.logo}
+                src={setting.logo}
                 alt="Logo"
                 fill
                 className="object-contain"

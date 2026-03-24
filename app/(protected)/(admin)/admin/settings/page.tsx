@@ -620,7 +620,7 @@ export default function SettingsPage() {
 
       {/* TinyMCE Editor */}
       <Editor
-        apiKey="9b9wji2lpvz93l03y7ai6kb09gpxzcpsnrxemixdpbpsuq8l"
+        apiKey={process.env.NEXT_APP_TINYMCE_KEY}
         value={editTemplateDescription}
         onEditorChange={(content) => setEditTemplateDescription(content)}
         init={{

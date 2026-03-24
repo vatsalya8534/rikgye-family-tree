@@ -1,13 +1,11 @@
 "use client";
 
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import Image from 'next/image';
+import Link from 'next/link';
 
 const FamilyMembers = ({ data }: { data: any }) => {
-
-    console.log(data);
-    
-
 
     return (
         <div className="w-full">
@@ -28,7 +26,7 @@ const FamilyMembers = ({ data }: { data: any }) => {
 
                 <TableBody>
 
-                    {data.map((d: any) => (
+                    {data.slice(0, 5).map((d: any) => (
                         <TableRow
                             key={d.id}
                             className="hover:bg-emerald-50/60 dark:hover:bg-emerald-900/20 transition-colors"
@@ -45,9 +43,15 @@ const FamilyMembers = ({ data }: { data: any }) => {
                         </TableRow>
                     ))}
 
+
+
                 </TableBody>
 
             </Table>
+
+            <Button asChild className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700">
+                <Link href="/admin/familes">View All Family Members</Link>
+            </Button>
 
         </div>
     )

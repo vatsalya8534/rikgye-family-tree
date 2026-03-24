@@ -33,6 +33,9 @@ export interface FamilyMemberTree {
 export async function createFamilyMember(data: Omit<any, "id">) {
   const currentUser = await getCurrentUser();
 
+  console.log(data);
+  
+
   if (!currentUser?.data?.id) {
     throw new Error("User not authenticated");
   }
@@ -48,14 +51,12 @@ export async function createFamilyMember(data: Omit<any, "id">) {
 
     let parentToAssign: string | null = null;
 
-    // ✅ Father logic (same as before)
     if (data.relation === "FATHER") {
       parentToAssign = existingMember?.parentId ?? null;
     } else {
       parentToAssign = parentId;
     }
 
-    // ✅ Create member FIRST (without spouseId)
     const member = await tx.familyMember.create({
       data: {
         name: data.name,
@@ -87,7 +88,6 @@ export async function createFamilyMember(data: Omit<any, "id">) {
       },
     });
 
-    // 🔥 ✅ SPOUSE LINKING (NEW LOGIC)
     if (data.spouseId) {
       // update current member
       await tx.familyMember.update({

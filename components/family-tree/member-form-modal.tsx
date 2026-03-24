@@ -69,6 +69,7 @@ const MemberFormModal = ({
       ? { ...familyMemberDefaultValues, ...editingMember }
       : {
         ...familyMemberDefaultValues,
+        image: [],
         parentId: defaultParentId ?? null,
         relation: "",
       },
@@ -91,6 +92,7 @@ const MemberFormModal = ({
     } else {
       form.reset({
         ...familyMemberDefaultValues,
+        image: [],
         parentId: defaultParentId ?? null,
         relation: "",
       });
@@ -159,17 +161,14 @@ const MemberFormModal = ({
   const isAlive = form.watch("isAlive");
 
   return (
-
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-lg h-[90vh] flex flex-col overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50 p-0 shadow-lg [&>button]:hidden">
-
         {/* HEADER */}
         <DialogHeader className="bg-emerald-700 text-white px-6 py-4 shrink-0">
           <div className="flex items-center justify-between w-full">
             <DialogTitle className="text-lg font-semibold">
               {editingMember ? "Edit Member" : "Add Family Member"}
             </DialogTitle>
-
             <button onClick={onClose}>
               <X className="h-5 w-5 text-white" />
             </button>
@@ -179,15 +178,15 @@ const MemberFormModal = ({
         {/* BODY */}
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(handleFormSubmit)}
+            onSubmit={form.handleSubmit(handleFormSubmit, (error) => console.log(error))}
             className="flex flex-col flex-1 overflow-hidden"
           >
-
             {/* MIDDLE SECTION */}
             <div className="flex-1 overflow-hidden p-4">
-
-              <Tabs defaultValue="general" className="flex flex-col flex-1 overflow-hidden">
-
+              <Tabs
+                defaultValue="general"
+                className="flex flex-col flex-1 overflow-hidden"
+              >
                 {/* ✅ STICKY TABS */}
                 <div className="sticky top-0 z-40 bg-emerald-50 border-b">
                   <TabsList className="mb-4" variant="line">
@@ -199,6 +198,7 @@ const MemberFormModal = ({
                   </TabsList>
                 </div>
 
+                {/* GENERAL TAB */}
                 <TabsContent value="general">
                   <div className="grid grid-cols-2 gap-4">
                     {/* NAME */}
@@ -212,7 +212,6 @@ const MemberFormModal = ({
                         </FormItem>
                       )}
                     />
-
                     {/* GENDER */}
                     <FormField
                       control={form.control}
@@ -220,10 +219,7 @@ const MemberFormModal = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Gender</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
+                          <Select value={field.value} onValueChange={field.onChange}>
                             <SelectTrigger className="w-full">
                               <SelectValue />
                             </SelectTrigger>
@@ -236,7 +232,6 @@ const MemberFormModal = ({
                         </FormItem>
                       )}
                     />
-
                     {/* BIRTH */}
                     <FormField
                       control={form.control}
@@ -248,18 +243,21 @@ const MemberFormModal = ({
                         </FormItem>
                       )}
                     />
+                    <FormField control={form.control} name="birthPlace" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Birth Place</FormLabel>
+                        <Input {...field} />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="currentResidence" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Residence</FormLabel>
+                        <Input {...field} />
+                      </FormItem>
+                    )} />
+                    {/* MARRIAGE PLACE */}
 
-                    <FormField
-                      control={form.control}
-                      name="marriagePlace"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Marriage Place</FormLabel>
-                          <Input {...field} />
-                        </FormItem>
-                      )}
-                    />
-
+                    {/* PROFESSION */}
                     <FormField
                       control={form.control}
                       name="profession"
@@ -270,7 +268,7 @@ const MemberFormModal = ({
                         </FormItem>
                       )}
                     />
-
+                    {/* EMAIL */}
                     <FormField
                       control={form.control}
                       name="email"
@@ -281,7 +279,7 @@ const MemberFormModal = ({
                         </FormItem>
                       )}
                     />
-
+                    {/* PHONE */}
                     <FormField
                       control={form.control}
                       name="phone"
@@ -292,7 +290,6 @@ const MemberFormModal = ({
                         </FormItem>
                       )}
                     />
-
                     {/* PARENT */}
                     <FormField
                       control={form.control}
@@ -324,37 +321,67 @@ const MemberFormModal = ({
                     />
                   </div>
                 </TabsContent>
-                <TabsContent value="images">
-                  <label className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 transition">
-                    <UploadCloud className="mb-2 text-gray-500" />
-                    <p className="text-sm text-gray-600">
-                      Click or drag images here
-                    </p>
-                    <span className="text-xs text-gray-400">
-                      Multiple files supported
-                    </span>
 
-                    <input
-                      type="file"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => { }}
-                    />
-                  </label>
+                {/* IMAGES TAB */}
+                <TabsContent value="images">
+                  <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col gap-4">
+                        <label className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 transition">
+                          <UploadCloud className="mb-2 text-gray-500" />
+                          <p className="text-sm text-gray-600">Click or drag images here</p>
+                          <span className="text-xs text-gray-400">Multiple files supported</span>
+                          <input
+                            type="file"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                              if (!e.target.files) return;
+                              const filesArray = Array.from(e.target.files);
+                              const urls = filesArray.map((file) => URL.createObjectURL(file));
+                              field.onChange([...(field.value || []), ...urls]);
+                            }}
+                          />
+                        </label>
+
+                        {/* Show previews */}
+                        {field.value && field?.value?.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {field.value.map((img: string, index: number) => (
+                              <div key={index} className="relative w-20 h-20 rounded overflow-hidden border">
+                                <img src={img} alt={`preview-${index}`} className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"
+                                  onClick={() => {
+                                    const updated = field.value.filter((_i, i) => i !== index);
+                                    field.onChange(updated);
+                                  }}
+                                >
+                                  <X className="w-3 h-3 text-red-500" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </FormItem>
+                    )}
+                  />
                 </TabsContent>
 
+                {/* RELATION TAB */}
                 <TabsContent value="relation">
                   <div className="grid grid-cols-2 gap-4">
+                    {/* RELATION */}
                     <FormField
                       control={form.control}
                       name="relation"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Relation</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
+                          <Select value={field.value} onValueChange={field.onChange}>
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select relation" />
                             </SelectTrigger>
@@ -371,7 +398,17 @@ const MemberFormModal = ({
                         </FormItem>
                       )}
                     />
-
+                    <FormField
+                      control={form.control}
+                      name="marriagePlace"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Marriage Place</FormLabel>
+                          <Input {...field} />
+                        </FormItem>
+                      )}
+                    />
+                    {/* MARRIAGE DATE */}
                     <FormField
                       control={form.control}
                       name="marriageDate"
@@ -382,90 +419,29 @@ const MemberFormModal = ({
                         </FormItem>
                       )}
                     />
-
-
-                    <FormField
-                      control={form.control}
-                      name="spouseMaidenName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Spouse Maiden Name</FormLabel>
-                          <Input {...field} />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="spouseFather"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Spouse Father</FormLabel>
-                          <Input {...field} />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="spouseMother"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Spouse Mother</FormLabel>
-                          <Input {...field} />
-                        </FormItem>
-                      )}
-                    />
+                    {/* SPOUSE INFO */}
+                    <FormField control={form.control} name="spouseMaidenName" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Spouse Maiden Name</FormLabel>
+                        <Input {...field} />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="spouseFather" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Spouse Father</FormLabel>
+                        <Input {...field} />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="spouseMother" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Spouse Mother</FormLabel>
+                        <Input {...field} />
+                      </FormItem>
+                    )} />
                   </div>
                 </TabsContent>
-                <TabsContent value="address">
-                  <div className="grid grid-cols-2 gap-4">
 
-                    <FormField
-                      control={form.control}
-                      name="currentResidence"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Current Residence</FormLabel>
-                          <Input {...field} />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="spouseMaidenName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Spouse Maiden Name</FormLabel>
-                          <Input {...field} />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="spouseFather"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Spouse Father</FormLabel>
-                          <Input {...field} />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="spouseMother"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Spouse Mother</FormLabel>
-                          <Input {...field} />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </TabsContent>
+                {/* LIFE STATUS TAB */}
                 <TabsContent value="live">
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
@@ -474,37 +450,25 @@ const MemberFormModal = ({
                       render={({ field }) => (
                         <FormItem className="flex justify-between p-3 border rounded-lg">
                           <FormLabel>Is Alive</FormLabel>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormItem>
                       )}
                     />
 
                     {!isAlive && (
                       <>
-                        <FormField
-                          control={form.control}
-                          name="causeOfDeath"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Cause of Death</FormLabel>
-                              <Input {...field} />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="deathDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Date of Death</FormLabel>
-                              <Input type="date" {...field} />
-                            </FormItem>
-                          )}
-                        />
+                        <FormField control={form.control} name="causeOfDeath" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cause of Death</FormLabel>
+                            <Input {...field} />
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name="deathDate" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Date of Death</FormLabel>
+                            <Input type="date" {...field} />
+                          </FormItem>
+                        )} />
                       </>
                     )}
                   </div>
@@ -521,7 +485,6 @@ const MemberFormModal = ({
                 {editingMember ? "Save Changes" : "Add Member"}
               </Button>
             </div>
-
           </form>
         </Form>
       </DialogContent>

@@ -251,6 +251,22 @@ const TreeLayout = ({
     setTranslate({ x: width / 2, y: 120 });
   }, [members, refreshKey]);
 
+  if (members.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-6">
+        <p className="text-lg font-medium">No family members yet</p>
+
+        <button
+          onClick={() => onAdd()}
+          className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-white"
+        >
+          <Plus size={16} />
+          Add First Member
+        </button>
+      </div>
+    );
+  }
+
   const data: RawNodeDatum =
     treeData.length === 1
       ? treeData[0]
@@ -350,8 +366,8 @@ export const FamilyTreeContent = () => {
             {/* HEADER */}
             <div
               className={`h-28 ${selectedMember.gender === "MALE"
-                  ? "bg-gradient-to-r from-blue-500 to-indigo-500"
-                  : "bg-gradient-to-r from-pink-500 to-rose-500"
+                ? "bg-gradient-to-r from-blue-500 to-indigo-500"
+                : "bg-gradient-to-r from-pink-500 to-rose-500"
                 }`}
             >
               <button
@@ -365,7 +381,7 @@ export const FamilyTreeContent = () => {
             {/* PROFILE IMAGE */}
             <div className="flex justify-center -mt-14">
               <img
-                src={selectedMember.image || ""}
+                src={selectedMember.image[0] || ""}
                 className={`w-28 h-28 rounded-full object-cover border-[4px] ${selectedMember.gender === "MALE" ? "border-blue-400" : "border-pink-400"
                   } bg-white`}
               />

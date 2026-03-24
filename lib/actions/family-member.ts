@@ -163,13 +163,13 @@ export async function getFamilyMembers(): Promise<FamilyMemberTree[]> {
   return roots;
 }
 
-export async function getSpouses(spouseId: string): Promise<FamilyMemberTree[]> {
+export async function getSpouses(spouseId: string) {
   const members = await prisma.familyMember.findMany({
-    orderBy: { birthDate: "asc" },
+    orderBy: { updatedAt: "desc" },
     where: {
       spouseId: spouseId
     }
-  });
+  });   
 
   const formattedMembers = members.map((m) => ({
     id: m.id,
@@ -196,21 +196,7 @@ export async function getSpouses(spouseId: string): Promise<FamilyMemberTree[]> 
     children: [] as FamilyMemberTree[],
   }));
 
-  const map = new Map<string, FamilyMemberTree>();
-  const roots: any = [];
-
-  formattedMembers.forEach((m: any) => map.set(m.id, m));
-
-  formattedMembers.forEach((m) => {
-    if (m.parentId) {
-      const parent: any = map.get(m.parentId);
-      if (parent) parent.children.push(m);
-    } else {
-      roots.push(m);
-    }
-  });
-
-  return roots;
+  return formattedMembers;
 }
 
 

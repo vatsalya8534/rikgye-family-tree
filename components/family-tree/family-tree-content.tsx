@@ -9,7 +9,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import MemberFormModal from "./member-form-modal";
 import { DeleteMemberDialog } from "./delete-member-modal";
 
-import { deleteFamilyMember } from "@/lib/actions/family-member";
+import { deleteFamilyMember, getSpouses } from "@/lib/actions/family-member";
 import { getCurrentUser } from "@/lib/actions/user-action";
 
 /* ---------------- CONFIG ---------------- */
@@ -94,6 +94,8 @@ const NodeCard = ({
   const canEdit = isAdmin || isOwner;
   const isMale = member.gender === "MALE";
 
+  const SPOUSE_GAP = 10; // spacing between cards
+
   const birthYear = member.birthDate
     ? new Date(member.birthDate).getFullYear()
     : "";
@@ -101,114 +103,180 @@ const NodeCard = ({
     ? new Date(member.deathDate).getFullYear()
     : "";
 
+  const [spouses, setSpouses] = useState<any>([]);
+
+  const getSpouse = async () => {
+    const spouses = await getSpouses(member.id);
+    setSpouses(spouses);
+  }
+
+  useEffect(() => {
+    getSpouse()
+  }, [])
+
   return (
-    <g>
-      <foreignObject
-        x={-CARD_W / 2}
-        y={-CARD_H / 2}
-        width={CARD_W + 80}
-        height={CARD_H}
-        style={{ overflow: "visible" }}
-      >
-        <div className="relative group flex items-center h-full isolate">
-          {/* ACTION PANEL */}
-          <div
-            className="absolute -left-16 top-1/2 -translate-y-1/2 flex flex-col gap-2
+    <>
+      <g>
+        <foreignObject
+          x={-(CARD_W / 2)}
+          y={-CARD_H / 2}
+          width={CARD_W + 80}
+          height={CARD_H}
+          style={{ overflow: "visible" }}
+        >
+          <div className="relative group flex items-center h-full isolate">
+            {/* ACTION PANEL */}
+            <div
+              className="absolute -right-[-20px] top-1/2 -translate-y-1/2 flex flex-col
             bg-white/80 backdrop-blur-xl border border-white/40
             shadow-xl rounded-xl p-2
             opacity-0 group-hover:opacity-100
             -translate-x-2 group-hover:translate-x-0
             transition-all duration-300 z-30"
-          >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAdd(member);
-              }}
-              className="p-2 hover:bg-green-500 hover:text-white rounded-lg transition"
             >
-              <Plus size={14} />
-            </button>
-
-            {canEdit && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onEdit(member);
+                  onAdd(member);
                 }}
-                className="p-2 hover:bg-blue-500 hover:text-white rounded-lg transition"
+                className="p-2 hover:bg-green-500 hover:text-white rounded-lg transition"
               >
-                <Pencil size={14} />
+                <Plus size={14} />
               </button>
-            )}
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(member);
-              }}
-              className="p-2 hover:bg-red-500 hover:text-white rounded-lg transition"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
+              {canEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(member);
+                  }}
+                  className="p-2 hover:bg-blue-500 hover:text-white rounded-lg transition"
+                >
+                  <Pencil size={14} />
+                </button>
+              )}
 
-          {/* CARD */}
-          <div className="relative z-0">
-            <div
-              onClick={() => onView(member)}
-              className={`relative flex flex-col items-center cursor-pointer pt-12
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(member);
+                }}
+                className="p-2 hover:bg-red-500 hover:text-white rounded-lg transition"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+
+            {/* CARD */}
+            <div className="relative z-0">
+              <div
+                onClick={() => onView(member)}
+                className={`relative flex flex-col items-center cursor-pointer pt-12
                 backdrop-blur-xl overflow-visible z-10
                 border-[3px]
                 ${isMale
-                  ? "border-blue-400 bg-gradient-to-br from-indigo-100/70 to-slate-100/60 rounded-2xl"
-                  : "border-pink-400 bg-gradient-to-br from-pink-100/70 to-rose-100/60 rounded-[30px]"
-                }
+                    ? "border-blue-400 bg-gradient-to-br from-indigo-100/70 to-slate-100/60 rounded-2xl"
+                    : "border-pink-400 bg-gradient-to-br from-pink-100/70 to-rose-100/60 rounded-[30px]"
+                  }
                 shadow-lg hover:shadow-2xl transition`}
-              style={{ width: CARD_W, height: CARD_H }}
-            >
+                style={{ width: CARD_W, height: CARD_H }}
+              >
 
-              {/* IMAGE */}
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-40">
-                {member.image ? (
-                  <img
-                    src={member.image[0] ?? ''}
-                    className={`w-20 h-20 rounded-full object-cover
+                {/* IMAGE */}
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-40">
+                  {member.image ? (
+                    <img
+                      src={member.image[0] ?? ''}
+                      className={`w-20 h-20 rounded-full object-cover
                       border-[3px]
                       ${isMale ? "border-blue-400" : "border-pink-400"}
                       shadow-lg bg-white`}
-                  />
-                ) : (
-                  <div
-                    className={`w-20 h-20 rounded-full flex items-center justify-center text-white
+                    />
+                  ) : (
+                    <div
+                      className={`w-20 h-20 rounded-full flex items-center justify-center text-white
                     border-[3px]
                     ${isMale ? "bg-blue-400 border-blue-500" : "bg-pink-400 border-pink-500"}
                     shadow-lg`}
-                  >
-                    {member.name.charAt(0)}
-                  </div>
-                )}
-              </div>
+                    >
+                      {member.name.charAt(0)}
+                    </div>
+                  )}
+                </div>
 
-              <p className="mt-2 text-sm font-semibold text-center">
-                {member.name}
-              </p>
+                <p className="mt-2 text-sm font-semibold text-center">
+                  {member.name}
+                </p>
 
-              <p className="text-[11px] text-gray-600">
-                {member.isAlive
-                  ? birthYear
-                  : `${birthYear} - ${deathYear || "—"}`}
-              </p>
+                <p className="text-[11px] text-gray-600">
+                  {member.isAlive
+                    ? birthYear
+                    : `${birthYear} - ${deathYear || "—"}`}
+                </p>
 
-              <span className={`mt-1 text-[10px] px-2 py-[3px] rounded-full
+                <span className={`mt-1 text-[10px] px-2 py-[3px] rounded-full
                 ${member.isAlive ? "bg-green-200" : "bg-red-200"}`}>
-                {member.isAlive ? "Alive" : "Dead"}
-              </span>
+                  {member.isAlive ? "Alive" : "Dead"}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      </foreignObject>
-    </g>
+        </foreignObject>
+      </g>
+      {spouses.map((spouse: any, index: number) => {
+        const x = -((index + 1) * (CARD_W + SPOUSE_GAP)) - 75; // ✅ LEFT ONLY
+
+        const isFemale = spouse.gender === "FEMALE";
+
+        return (
+          <g key={index}>
+            <foreignObject
+              x={x}
+              y={-CARD_H / 2}
+              width={CARD_W}   // ✅ IMPORTANT FIX
+              height={CARD_H}
+              style={{ overflow: "visible" }}
+            >
+              <div>
+                <div
+                  onClick={() => onView(spouse)}
+                  className={`relative flex flex-col items-center cursor-pointer pt-12
+              border-[3px] mr-20
+              ${isFemale
+                      ? "border-pink-400 bg-pink-100 rounded-[30px]"
+                      : "border-blue-400 bg-blue-100 rounded-2xl"}
+              shadow-lg hover:shadow-xl transition`}
+                  style={{ width: CARD_W, height: CARD_H }}
+                >
+
+                  {/* IMAGE */}
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2">
+                    {spouse.image?.length ? (
+                      <img
+                        src={spouse.image[0]}
+                        className={`w-20 h-20 rounded-full object-cover border-[3px]
+                    ${isFemale ? "border-pink-400" : "border-blue-400"}`}
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-gray-400 flex items-center justify-center text-white">
+                        {spouse.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="mt-2 text-sm font-semibold text-center">
+                    {spouse.name}
+                  </p>
+
+                </div>
+              </div>
+            </foreignObject>
+          </g>
+        );
+      })}
+
+    </>
+
   );
 };
 

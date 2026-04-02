@@ -226,7 +226,7 @@ const NodeCard = ({
         </foreignObject>
 
         {spouses.map((spouse: any, index: number) => {
-          const x = -((index + 1) * (CARD_W + SPOUSE_GAP)) - 75; // ✅ LEFT ONLY
+          const x = -((index + 1) * (CARD_W + SPOUSE_GAP)) - 75; 
 
           const isFemale = spouse.gender === "FEMALE";
 

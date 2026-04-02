@@ -11,14 +11,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
+import { Form, FormField, FormItem, FormLabel } from "@/components/ui/form";
 
 import { Input } from "@/components/ui/input";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+import { cn } from "@/lib/utils";
 
 import {
   Select,
@@ -54,6 +60,27 @@ interface MemberFormModalProps {
   defaultParentId: string | null;
 }
 
+const getGenderFromRelation = (relation: string): Gender => {
+  switch (relation) {
+    case "FATHER":
+    case "SON":
+    case "HUSBAND":
+      return Gender.MALE;
+
+    case "MOTHER":
+    case "DAUGHTER":
+    case "WIFE":
+    case "EX_WIFE":
+      return Gender.FEMALE;
+
+    case "SPOUSE":
+      return Gender.OTHER; // neutral
+
+    default:
+      return Gender.OTHER;
+  }
+};
+
 const MemberFormModal = ({
   open,
   onClose,
@@ -62,17 +89,17 @@ const MemberFormModal = ({
   editingMember,
   defaultParentId,
 }: MemberFormModalProps) => {
-  const router = useRouter()
+  const router = useRouter();
   const form = useForm<FormData>({
     resolver: zodResolver(familyMemberSchema) as any,
     defaultValues: editingMember
       ? { ...familyMemberDefaultValues, ...editingMember }
       : {
-        ...familyMemberDefaultValues,
-        image: [],
-        parentId: defaultParentId ?? null,
-        relation: "",
-      },
+          ...familyMemberDefaultValues,
+          image: [],
+          parentId: defaultParentId ?? null,
+          relation: "",
+        },
   });
 
   useEffect(() => {
@@ -144,7 +171,30 @@ const MemberFormModal = ({
       spouseId = values.parentId ?? null;
       parentId = null;
     }
+    const derivedGender = getGenderFromRelation(values.relation);
 
+    const newMember: any = await createFamilyMember({
+      ...values,
+      relation,
+      spouseId,
+      parentId: values.parentId,
+      image: values.image ?? [],
+      gender: derivedGender,
+      userId: values.userId ?? null,
+    });
+
+    
+
+    const updatedMember: any = await updateFamilyMember({
+      ...editingMember,
+      ...values,
+      relation,
+      spouseId,
+      parentId,
+      image: imageUrl,
+      gender: derivedGender,
+      userId: values.userId ?? null,
+    });
     if (!editingMember) {
       const newMember: any = await createFamilyMember({
         ...values,
@@ -152,12 +202,11 @@ const MemberFormModal = ({
         spouseId,
         parentId: values.parentId,
         image: values.image ?? [],
-        gender: values.gender ?? Gender.OTHER,
         userId: values.userId ?? null,
       });
 
       form.reset();
-      router.refresh()
+      router.refresh();
       onSubmit(newMember);
     } else {
       const updatedMember: any = await updateFamilyMember({
@@ -172,7 +221,7 @@ const MemberFormModal = ({
       });
 
       form.reset();
-      router.refresh()
+      router.refresh();
       onSubmit(updatedMember);
     }
 
@@ -184,7 +233,6 @@ const MemberFormModal = ({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-xl h-[92vh] flex flex-col overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100 p-0 shadow-2xl [&>button]:hidden">
-
         {/* HEADER */}
         <DialogHeader className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white px-6 py-5 shadow-md">
           <div className="flex items-center justify-between w-full">
@@ -208,7 +256,6 @@ const MemberFormModal = ({
           >
             <div className="flex-1 overflow-hidden p-5">
               <Tabs defaultValue="general" className="flex flex-col h-full">
-
                 {/* TABS */}
                 <div className="sticky top-0 z-40 bg-gradient-to-b from-emerald-50 to-transparent pb-2">
                   <TabsList className="flex w-full bg-emerald-100/70 backdrop-blur-md rounded-xl p-1 shadow-inner border border-emerald-200 gap-1">
@@ -218,7 +265,9 @@ const MemberFormModal = ({
                         value={tab}
                         className="flex-1 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 data-[state=active]:bg-emerald-600 data-[state=active]:text-white transition-all"
                       >
-                        {tab === "live" ? "Life Status" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        {tab === "live"
+                          ? "Life Status"
+                          : tab.charAt(0).toUpperCase() + tab.slice(1)}
                       </TabsTrigger>
                     ))}
                   </TabsList>
@@ -227,238 +276,375 @@ const MemberFormModal = ({
                 {/* GENERAL */}
                 <TabsContent value="general">
                   <div className="grid grid-cols-2 gap-5">
-                    <FormField control={form.control} name="name" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <Input {...field} className="rounded-lg shadow-sm" />
+                        </FormItem>
+                      )}
+                    />
 
-                    <FormField control={form.control} name="gender" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Gender</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="rounded-lg shadow-sm w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={Gender.MALE}>Male</SelectItem>
-                            <SelectItem value={Gender.FEMALE}>Female</SelectItem>
-                            <SelectItem value={Gender.OTHER}>Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="birthDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Birth Date</FormLabel>
 
-                    <FormField control={form.control} name="birthDate" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Birth Date</FormLabel>
-                        <Input type="date" {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal rounded-lg shadow-sm",
+                                  !field.value && "text-muted-foreground",
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {field.value
+                                  ? format(new Date(field.value), "dd MMM yyyy")
+                                  : "Select birth date"}
+                              </Button>
+                            </PopoverTrigger>
 
-                    <FormField control={form.control} name="birthPlace" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Birth Place</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
+                              <Calendar
+                                mode="single"
+                                selected={
+                                  field.value
+                                    ? new Date(field.value + "T00:00:00")
+                                    : undefined
+                                }
+                                onSelect={(date) => {
+                                  if (!date) return;
 
-                    <FormField control={form.control} name="currentResidence" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Current Residence</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                                  // ✅ FIX: Convert Date → YYYY-MM-DD safely
+                                  const formatted = format(date, "yyyy-MM-dd");
+                                  field.onChange(formatted);
+                                }}
+                                disabled={(date) =>
+                                  date > new Date() ||
+                                  date < new Date("1900-01-01")
+                                }
+                                captionLayout="dropdown" // 🔥 adds month/year dropdown
+                                fromYear={1900}
+                                toYear={new Date().getFullYear()}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </FormItem>
+                      )}
+                    />
 
-                    <FormField control={form.control} name="profession" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Profession</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="birthPlace"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Birth Place</FormLabel>
+                          <Input {...field} className="rounded-lg shadow-sm" />
+                        </FormItem>
+                      )}
+                    />
 
-                    <FormField control={form.control} name="email" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <Input type="email" {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="currentResidence"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Current Residence</FormLabel>
+                          <Input {...field} className="rounded-lg shadow-sm" />
+                        </FormItem>
+                      )}
+                    />
 
-                    <FormField control={form.control} name="phone" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="profession"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Profession</FormLabel>
+                          <Input {...field} className="rounded-lg shadow-sm" />
+                        </FormItem>
+                      )}
+                    />
 
-                    <FormField control={form.control} name="parentId" render={() => (
-                      <FormItem className="col-span-2">
-                        <FormLabel>Select Person</FormLabel>
-                        <Select
-                          disabled
-                          value={form.getValues("parentId") ?? "__none__"}
-                          onValueChange={(v) =>
-                            form.setValue("parentId", v === "__none__" ? null : v)
-                          }
-                        >
-                          <SelectTrigger className="rounded-lg shadow-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">None</SelectItem>
-                            {existingMembers.map((m) => (
-                              <SelectItem key={m.id} value={m.id}>
-                                {m.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <Input
+                            type="email"
+                            {...field}
+                            className="rounded-lg shadow-sm"
+                          />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone</FormLabel>
+                          <Input {...field} className="rounded-lg shadow-sm" />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="parentId"
+                      render={() => (
+                        <FormItem className="col-span-2">
+                          <FormLabel>Select Person</FormLabel>
+                          <Select
+                            disabled
+                            value={form.getValues("parentId") ?? "__none__"}
+                            onValueChange={(v) =>
+                              form.setValue(
+                                "parentId",
+                                v === "__none__" ? null : v,
+                              )
+                            }
+                          >
+                            <SelectTrigger className="rounded-lg shadow-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">None</SelectItem>
+                              {existingMembers.map((m) => (
+                                <SelectItem key={m.id} value={m.id}>
+                                  {m.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </TabsContent>
 
                 {/* IMAGES (LOGIC PRESERVED) */}
                 <TabsContent value="images">
-                  <FormField control={form.control} name="image" render={({ field }) => (
-                    <FormItem className="flex flex-col gap-4">
-                      <label className="border-2 border-dashed rounded-2xl p-8 flex flex-col items-center cursor-pointer bg-white hover:shadow-lg transition">
-                        <UploadCloud className="text-emerald-500 mb-2" />
-                        <p>Upload Images</p>
+                  <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col gap-4">
+                        <label className="border-2 border-dashed rounded-2xl p-8 flex flex-col items-center cursor-pointer bg-white hover:shadow-lg transition">
+                          <UploadCloud className="text-emerald-500 mb-2" />
+                          <p>Upload Images</p>
 
-                        <input
-                          type="file"
-                          multiple
-                          className="hidden"
-                          onChange={(e) => {
-                            if (!e.target.files) return;
-                            const files = Array.from(e.target.files);
-                            const current = field.value || [];
-                            field.onChange([...current, ...files]); // ✅ ORIGINAL LOGIC
-                          }}
-                        />
-                      </label>
+                          <input
+                            type="file"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                              if (!e.target.files) return;
+                              const files = Array.from(e.target.files);
+                              const current = field.value || [];
+                              field.onChange([...current, ...files]); // ✅ ORIGINAL LOGIC
+                            }}
+                          />
+                        </label>
 
-                      {field.value?.length > 0 && (
-                        <div className="flex flex-wrap gap-3">
-                          {field.value.map((img: File | string, index: number) => {
-                            const src =
-                              img instanceof File
-                                ? URL.createObjectURL(img)
-                                : img;
+                        {field.value?.length > 0 && (
+                          <div className="flex flex-wrap gap-3">
+                            {field.value.map(
+                              (img: File | string, index: number) => {
+                                const src =
+                                  img instanceof File
+                                    ? URL.createObjectURL(img)
+                                    : img;
 
-                            return (
-                              <div key={index} className="relative w-24 h-24 rounded-xl overflow-hidden shadow-md">
-                                <img src={src} className="w-full h-full object-cover" />
-                                <button
-                                  type="button"
-                                  className="absolute top-1 right-1 bg-white rounded-full p-1"
-                                  onClick={() => {
-                                    const updated = field.value.filter((_, i) => i !== index);
-                                    field.onChange(updated);
-                                  }}
-                                >
-                                  <X className="w-3 h-3 text-red-500" />
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </FormItem>
-                  )} />
+                                return (
+                                  <div
+                                    key={index}
+                                    className="relative w-24 h-24 rounded-xl overflow-hidden shadow-md"
+                                  >
+                                    <img
+                                      src={src}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      type="button"
+                                      className="absolute top-1 right-1 bg-white rounded-full p-1"
+                                      onClick={() => {
+                                        const updated = field.value.filter(
+                                          (_, i) => i !== index,
+                                        );
+                                        field.onChange(updated);
+                                      }}
+                                    >
+                                      <X className="w-3 h-3 text-red-500" />
+                                    </button>
+                                  </div>
+                                );
+                              },
+                            )}
+                          </div>
+                        )}
+                      </FormItem>
+                    )}
+                  />
                 </TabsContent>
 
                 {/* RELATION */}
                 <TabsContent value="relation">
                   <div className="grid grid-cols-2 gap-5">
-                    <FormField control={form.control} name="relation" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Relation</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="rounded-lg shadow-sm">
-                            <SelectValue placeholder="Select relation" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="FATHER">Father</SelectItem>
-                            <SelectItem value="MOTHER">Mother</SelectItem>
-                            <SelectItem value="CHILD">Child</SelectItem>
-                            <SelectItem value="STEP_CHILD">Step Child</SelectItem>
-                            <SelectItem value="WIFE">Wife</SelectItem>
-                            <SelectItem value="EX_WIFE">Ex Wife</SelectItem>
-                            <SelectItem value="SPOUSE">Spouse</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="relation"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Relation</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger className="rounded-lg shadow-sm">
+                              <SelectValue placeholder="Select relation" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="FATHER">Father</SelectItem>
+                              <SelectItem value="MOTHER">Mother</SelectItem>
+                              <SelectItem value="CHILD">Child</SelectItem>
+                              <SelectItem value="STEP_CHILD">
+                                Step Child
+                              </SelectItem>
+                              <SelectItem value="WIFE">Wife</SelectItem>
+                              <SelectItem value="EX_WIFE">Ex Wife</SelectItem>
+                              <SelectItem value="SPOUSE">Spouse</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
 
-                    <FormField control={form.control} name="marriagePlace" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Marriage Place</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="marriagePlace"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Marriage Place</FormLabel>
+                          <Input {...field} className="rounded-lg shadow-sm" />
+                        </FormItem>
+                      )}
+                    />
 
-                    <FormField control={form.control} name="marriageDate" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Marriage Date</FormLabel>
-                        <Input type="date" {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="marriageDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Marriage Date</FormLabel>
+                          <Input
+                            type="date"
+                            {...field}
+                            className="rounded-lg shadow-sm"
+                          />
+                        </FormItem>
+                      )}
+                    />
 
-                    <FormField control={form.control} name="spouseMaidenName" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Spouse Maiden Name</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="spouseMaidenName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Spouse Maiden Name</FormLabel>
+                          <Input {...field} className="rounded-lg shadow-sm" />
+                        </FormItem>
+                      )}
+                    />
 
-                    <FormField control={form.control} name="spouseFather" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Spouse Father</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="spouseFather"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Spouse Father</FormLabel>
+                          <Input {...field} className="rounded-lg shadow-sm" />
+                        </FormItem>
+                      )}
+                    />
 
-                    <FormField control={form.control} name="spouseMother" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Spouse Mother</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="spouseMother"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Spouse Mother</FormLabel>
+                          <Input {...field} className="rounded-lg shadow-sm" />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </TabsContent>
 
                 {/* LIFE */}
                 <TabsContent value="live">
                   <div className="grid grid-cols-2 gap-5">
-                    <FormField control={form.control} name="isAlive" render={({ field }) => (
-                      <FormItem className="flex justify-between p-4 border rounded-xl bg-white shadow-sm">
-                        <FormLabel>Is Alive</FormLabel>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormItem>
-                    )} />
+                    <FormField
+                      control={form.control}
+                      name="isAlive"
+                      render={({ field }) => (
+                        <FormItem className="flex justify-between p-4 border rounded-xl bg-white shadow-sm">
+                          <FormLabel>Is Alive</FormLabel>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormItem>
+                      )}
+                    />
 
                     {!isAlive && (
                       <>
-                        <FormField control={form.control} name="causeOfDeath" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cause of Death</FormLabel>
-                            <Input {...field} className="rounded-lg shadow-sm" />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name="deathDate" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Date of Death</FormLabel>
-                            <Input type="date" {...field} className="rounded-lg shadow-sm" />
-                          </FormItem>
-                        )} />
+                        <FormField
+                          control={form.control}
+                          name="causeOfDeath"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cause of Death</FormLabel>
+                              <Input
+                                {...field}
+                                className="rounded-lg shadow-sm"
+                              />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="deathDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Date of Death</FormLabel>
+                              <Input
+                                type="date"
+                                {...field}
+                                className="rounded-lg shadow-sm"
+                              />
+                            </FormItem>
+                          )}
+                        />
                       </>
                     )}
                   </div>
                 </TabsContent>
-
               </Tabs>
             </div>
 
@@ -467,11 +653,13 @@ const MemberFormModal = ({
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+              <Button
+                type="submit"
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
                 {editingMember ? "Save Changes" : "Add Member"}
               </Button>
             </div>
-
           </form>
         </Form>
       </DialogContent>

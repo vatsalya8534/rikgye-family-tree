@@ -73,28 +73,46 @@ export const passwordSchema = z
 
 export const familyMemberSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  image: z.array(z.union([
-    z.instanceof(File),
-    z.string().min(1)
-  ])),
-  gender: z.enum(Object.values(Gender)),
-  birthDate: z.string().min(1, "Date of Birth is required"),
-  birthPlace: z.string().min(1, "Place of Birth is requird"),
-  isAlive: z.boolean(),
-  currentResidence: z.string().min(1, "Current Residence is required"),
+
+  image: z.array(
+    z.union([
+      z.instanceof(File),
+      z.string().min(1),
+    ])
+  ).optional(),
+
+  gender: z.enum(Object.values(Gender)).optional(),
+
+  birthDate: z.string().optional(),
+  birthPlace: z.string().optional(),
+
+  isAlive: z.boolean().optional(),
+
+  currentResidence: z.string().optional(),
+
   deathDate: z.string().optional(),
   deathPlace: z.string().optional(),
   causeOfDeath: z.string().optional(),
+
   marriageDate: z.string().optional(),
   marriagePlace: z.string().optional(),
+
   spouseMaidenName: z.string().optional(),
   spouseFather: z.string().optional(),
   spouseMother: z.string().optional(),
+
   profession: z.string().optional(),
-  email: z.string().min(1, "Invalid email").optional(),
+  email: z
+    .string()
+    .email("Invalid email")
+    .optional()
+    .or(z.literal("")),
+
   phone: z.string().optional(),
+
   parentId: z.string().nullable().optional(),
   spouseId: z.string().nullable().optional(),
   userId: z.string().nullable().optional(),
+
   relation: z.string().optional(),
 });

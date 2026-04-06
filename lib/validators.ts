@@ -79,7 +79,7 @@ export const familyMemberSchema = z.object({
       z.instanceof(File),
       z.string().min(1),
     ])
-  ).optional(),
+  ).optional(), 
 
   gender: z.enum(Object.values(Gender)).optional(),
 

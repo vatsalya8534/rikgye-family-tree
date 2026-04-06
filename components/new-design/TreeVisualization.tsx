@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import * as d3 from 'd3';
 import { FamilyNode } from '@/types';
 
@@ -143,6 +143,8 @@ function findAncestorPath(node: FamilyNode, targetId: string): string[] | null {
 const TreeVisualization: React.FC<TreeVisualizationProps> = ({ data, onNodeClick, onEdit, onDelete, selectedId }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [hoveredNode, setHoveredNode] = useState<{ id: string; type: 'person' | 'spouse'; x: number; y: number } | null>(null);
+  const [zoomTransform, setZoomTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
 
   const renderTree = useCallback(() => {
     if (!svgRef.current || !containerRef.current) return;
@@ -171,6 +173,7 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({ data, onNodeClick
       .scaleExtent([0.2, 3])
       .on('zoom', (event) => {
         g.attr('transform', event.transform);
+        setZoomTransform(event.transform);
       });
 
     svg.call(zoom);
@@ -291,71 +294,6 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({ data, onNodeClick
         .attr('font-family', '"Space Grotesk", sans-serif')
         .text(`L${node.level}`);
 
-      // Action buttons group (initially hidden)
-      const actionGroup = group.append('g')
-        .attr('class', 'action-buttons')
-        .style('opacity', 0)
-        .style('pointer-events', 'none');
-
-      // Background for action buttons
-      actionGroup.append('rect')
-        .attr('x', NODE_W - 60)
-        .attr('y', -20)
-        .attr('width', 55)
-        .attr('height', 25)
-        .attr('rx', 12)
-        .attr('fill', 'rgba(0, 0, 0, 0.8)')
-        .attr('stroke', 'hsl(220, 15%, 35%)')
-        .attr('stroke-width', 1);
-
-      // Edit button
-      const editButton = actionGroup.append('g')
-        .attr('cursor', 'pointer')
-        .style('pointer-events', 'auto')
-        .on('click', (event) => {
-          event.stopPropagation();
-          if (onEdit) onEdit(node.id, node.type);
-        });
-
-      editButton.append('circle')
-        .attr('cx', NODE_W - 45)
-        .attr('cy', -7)
-        .attr('r', 8)
-        .attr('fill', 'hsl(38, 75%, 55%)');
-
-      editButton.append('text')
-        .attr('x', NODE_W - 45)
-        .attr('y', -3)
-        .attr('text-anchor', 'middle')
-        .attr('fill', 'white')
-        .attr('font-size', '10px')
-        .attr('font-weight', 'bold')
-        .text('✏');
-
-      // Delete button
-      const deleteButton = actionGroup.append('g')
-        .attr('cursor', 'pointer')
-        .style('pointer-events', 'auto')
-        .on('click', (event) => {
-          event.stopPropagation();
-          if (onDelete) onDelete(node.id);
-        });
-
-      deleteButton.append('circle')
-        .attr('cx', NODE_W - 25)
-        .attr('cy', -7)
-        .attr('r', 8)
-        .attr('fill', 'hsl(0, 75%, 55%)');
-
-      deleteButton.append('text')
-        .attr('x', NODE_W - 25)
-        .attr('y', -3)
-        .attr('text-anchor', 'middle')
-        .attr('fill', 'white')
-        .attr('font-size', '10px')
-        .attr('font-weight', 'bold')
-        .text('🗑');
-
       // Hover effect
       group.on('mouseenter', function () {
         d3.select(this).select('rect:nth-child(2)')
@@ -363,11 +301,8 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({ data, onNodeClick
           .attr('stroke', 'hsl(38, 75%, 55%)')
           .attr('stroke-width', 2.5);
         
-        // Show action buttons
-        d3.select(this).select('.action-buttons')
-          .transition().duration(150)
-          .style('opacity', 1)
-          .style('pointer-events', 'auto');
+        // Set hovered node for HTML buttons
+        setHoveredNode({ id: node.id, type: node.type, x: node.x + NODE_W - 60, y: node.y - 20 });
       }).on('mouseleave', function () {
         if (!isSelected) {
           d3.select(this).select('rect:nth-child(2)')
@@ -376,11 +311,8 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({ data, onNodeClick
             .attr('stroke-width', 1.5);
         }
         
-        // Hide action buttons
-        d3.select(this).select('.action-buttons')
-          .transition().duration(150)
-          .style('opacity', 0)
-          .style('pointer-events', 'none');
+        // Clear hovered node
+        setHoveredNode(null);
       });
     });
   }, [data, onNodeClick, onEdit, onDelete, selectedId]);
@@ -396,8 +328,44 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({ data, onNodeClick
   }, [renderTree]);
 
   return (
-    <div ref={containerRef} className="w-full h-full overflow-hidden bg-background rounded-lg border border-border">
+    <div ref={containerRef} className="w-full h-full overflow-hidden bg-background rounded-lg border border-border relative">
       <svg ref={svgRef} width="100%" height="100%" />
+      
+      {/* HTML Action Buttons Overlay */}
+      {hoveredNode && (
+        <div 
+          className="absolute z-10 flex gap-1 bg-black/80 rounded-lg p-1 border border-gray-600"
+          style={{
+            left: `${zoomTransform.applyX(hoveredNode.x)}px`,
+            top: `${zoomTransform.applyY(hoveredNode.y)}px`,
+            transform: `scale(${zoomTransform.k})`,
+            transformOrigin: 'top left'
+          }}
+        >
+          <button
+            className="w-8 h-8 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onEdit) onEdit(hoveredNode.id, hoveredNode.type);
+              setHoveredNode(null);
+            }}
+            title="Edit"
+          >
+            ✏
+          </button>
+          <button
+            className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onDelete) onDelete(hoveredNode.id);
+              setHoveredNode(null);
+            }}
+            title="Delete"
+          >
+            🗑
+          </button>
+        </div>
+      )}
     </div>
   );
 };

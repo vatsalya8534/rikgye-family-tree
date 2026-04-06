@@ -145,6 +145,7 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({ data, onNodeClick
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<{ id: string; type: 'person' | 'spouse'; x: number; y: number } | null>(null);
   const [zoomTransform, setZoomTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
+  const [isHoveringButtons, setIsHoveringButtons] = useState(false);
 
   const renderTree = useCallback(() => {
     if (!svgRef.current || !containerRef.current) return;
@@ -300,9 +301,9 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({ data, onNodeClick
           .transition().duration(150)
           .attr('stroke', 'hsl(38, 75%, 55%)')
           .attr('stroke-width', 2.5);
-        
-        // Set hovered node for HTML buttons
-        setHoveredNode({ id: node.id, type: node.type, x: node.x + NODE_W - 60, y: node.y - 20 });
+
+        // Set hovered node for HTML buttons - center over the node
+        setHoveredNode({ id: node.id, type: node.type, x: node.x + NODE_W / 2 - 27.5, y: node.y + NODE_H / 2 - 12.5 });
       }).on('mouseleave', function () {
         if (!isSelected) {
           d3.select(this).select('rect:nth-child(2)')
@@ -310,12 +311,16 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({ data, onNodeClick
             .attr('stroke', 'hsl(220, 15%, 25%)')
             .attr('stroke-width', 1.5);
         }
-        
-        // Clear hovered node
-        setHoveredNode(null);
+
+        // Only clear hovered node if not hovering over buttons
+        setTimeout(() => {
+          if (!isHoveringButtons) {
+            setHoveredNode(null);
+          }
+        }, 50);
       });
     });
-  }, [data, onNodeClick, onEdit, onDelete, selectedId]);
+  }, [data, onNodeClick, onEdit, onDelete, selectedId, isHoveringButtons]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     renderTree();
@@ -330,18 +335,37 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({ data, onNodeClick
   return (
     <div ref={containerRef} className="w-full h-full overflow-hidden bg-background rounded-lg border border-border relative">
       <svg ref={svgRef} width="100%" height="100%" />
-      
+
       {/* HTML Action Buttons Overlay */}
       {hoveredNode && (
-        <div 
+        <div
           className="absolute z-10 flex gap-1 bg-black/80 rounded-lg p-1 border border-gray-600"
           style={{
-            left: `${zoomTransform.applyX(hoveredNode.x)}px`,
-            top: `${zoomTransform.applyY(hoveredNode.y)}px`,
+            left: `${zoomTransform.applyX(hoveredNode.x - 30)}px`,
+            top: `${zoomTransform.applyY(hoveredNode.y) - 55}px`,
             transform: `scale(${zoomTransform.k})`,
             transformOrigin: 'top left'
           }}
+          onMouseEnter={() => {
+            setIsHoveringButtons(true);
+          }}
+          onMouseLeave={() => {
+            setIsHoveringButtons(false);
+            // Clear hovered node when leaving the buttons
+            setHoveredNode(null);
+          }}
         >
+          <button
+            className="w-8 h-8 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onEdit) onEdit(hoveredNode.id, hoveredNode.type);
+              setHoveredNode(null);
+            }}
+            title="Add"
+          >
+            ✏
+          </button>
           <button
             className="w-8 h-8 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
             onClick={(e) => {

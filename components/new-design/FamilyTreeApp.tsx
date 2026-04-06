@@ -2,12 +2,13 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Download, Upload, TreePine } from 'lucide-react';
+import { Plus, Download, Upload, TreePine, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TreeVisualization from '@/components/new-design/TreeVisualization';
 import { AddPersonModal, EditPersonModal } from '@/components/new-design/FamilyModals';
 import { toast } from 'sonner';
 import { useFamilyTree } from '@/hooks/useFamilyTree';
+import { Spouse } from '@/types';
 
 const FamilyTreeApp: React.FC = () => {
   const { root, findNode, addChild, addSpouse, updatePerson, updateSpouseType, deletePerson, exportData, importData } = useFamilyTree();
@@ -17,11 +18,16 @@ const FamilyTreeApp: React.FC = () => {
   const [editModal, setEditModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+
   const handleNodeClick = useCallback((id: string, type: 'person' | 'spouse') => {
-    setSelectedId(id);
-    setSelectedType(type);
-    setEditModal(true);
-  }, []);
+    if (selectedId === id) {
+      setSelectedId(null);
+    } else {
+      setSelectedId(id);
+      setSelectedType(type);
+    }
+    // setEditModal(true);
+  }, [selectedId]);
 
   const getSelectedData = () => {
     if (!selectedId) return null;
@@ -29,7 +35,7 @@ const FamilyTreeApp: React.FC = () => {
     const node = findNode(selectedId);
     if (node) return { name: node.name, gender: node.gender, birthYear: node.birthYear, isSpouse: false };
     // Check spouses
-    const findSpouse = (n: typeof root): { spouse: any; parentId: string } | null => {
+    const findSpouse = (n: typeof root): { spouse: Spouse; parentId: string } | null => {
       for (const s of n.spouses) {
         if (s.id === selectedId) return { spouse: s, parentId: n.id };
       }
@@ -98,6 +104,11 @@ const FamilyTreeApp: React.FC = () => {
           <h1 className="font-heading text-xl font-bold text-foreground">Family Tree</h1>
         </div>
         <div className="flex items-center gap-2">
+          {selectedId && (
+            <Button variant="outline" size="sm" onClick={() => setSelectedId(null)} className="gap-1">
+              <ArrowLeft className="w-4 h-4" /> Back
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => setAddModal(true)} className="gap-1">
             <Plus className="w-4 h-4" /> Add Member
           </Button>
@@ -125,12 +136,22 @@ const FamilyTreeApp: React.FC = () => {
         <span className="flex items-center gap-1.5">
           <span className="w-8 h-0.5 border-t-2 border-dashed" style={{ borderColor: 'hsl(0, 50%, 50%)' }} /> Ex
         </span>
-        <span className="text-muted-foreground/60 ml-auto">Scroll to zoom • Drag to pan • Click node to edit</span>
+        <span className="text-muted-foreground/60 ml-auto">Scroll to zoom • Drag to pan • Click node to highlight path</span>
       </div>
 
       {/* Tree */}
       <div className="flex-1">
-        <TreeVisualization data={root} onNodeClick={handleNodeClick} selectedId={selectedId} />
+        <TreeVisualization
+          data={root}
+          onNodeClick={handleNodeClick}
+          onEdit={(id : any, type : any) => {
+            setSelectedId(id);
+            setSelectedType(type);
+            setEditModal(true);
+          }}
+          onDelete={deletePerson}
+          selectedId={selectedId}
+        />
       </div>
 
       {/* Add Modal */}
@@ -175,5 +196,6 @@ const FamilyTreeApp: React.FC = () => {
     </div>
   );
 };
+
 
 export default FamilyTreeApp;

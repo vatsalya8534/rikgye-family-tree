@@ -13,6 +13,8 @@ const NewDesign = async () => {
     data = result
   }
 
+  console.log(data);
+  
   const members = await prisma.familyMember.findMany();
 
   return (

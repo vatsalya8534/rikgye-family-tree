@@ -125,12 +125,12 @@ const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data, members 
     return root ? findSpouseGender(root) : null;
   };
 
-  const handleDelete = (id: string) => {  
+  const handleDelete = (id: string) => {
 
-    const hasChildren = members.some((m : any) => m.parentId === id)
-  
+    const hasChildren = members.some((m: any) => m.parentId === id)
+
     const member = members.find((m: any) => m.id === id);
-    
+
     if (!member) return;
 
     setDeletingMember(member)
@@ -144,12 +144,10 @@ const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data, members 
   };
 
   const handleDeleteConfirm = async (deleteChildren: boolean) => {
-    
+
     if (!deletingMember) return;
 
     let res = await deleteFamilyMember(deletingMember.id, deleteChildren);
-
-    console.log(res);
 
     setShowDeleteDialog(false);
     setDeletingMember(null);
@@ -186,16 +184,12 @@ const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data, members 
               setEditModal(true);
             }}
             onDelete={handleDelete}
-            onAddParent={(childId) => {
-              setAddParentChildId(childId);
-              setAddParentModal(true);
-            }}
-            onAddChild={(parentId) => {
-              setAddChildParentId(parentId);
+            onAdd={(id) => {
+              setAddChildParentId(id);
               setAddChildModal(true);
             }}
-            onAddSpouse={(nodeId) => {
-              setAddSpouseNodeId(nodeId);
+            onAddSpouse={(id) => {
+              setAddSpouseNodeId(id);
               setAddSpouseModal(true);
             }}
             selectedId={selectedId}
@@ -229,6 +223,11 @@ const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data, members 
         existingMembers={members}
         defaultParentId={null}
         editingMember={null}
+        parentName=""
+        title="Add Family Member"
+        description="Add a new member to your family tree"
+        initialMode="person"
+        parentGender={null}
         onSubmit={async (data) => {
           try {
             toast.success(`${data.name} added to family tree!`);
@@ -245,8 +244,13 @@ const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data, members 
           open={editModal}
           onClose={() => { setEditModal(false); setSelectedId(null); }}
           existingMembers={members}
-          defaultParentId={null}
+          defaultParentId={selectedData.isSpouse ? selectedData.parentId : null}
           editingMember={selectedData}
+          parentName={selectedData?.parentId ? members.find((m: any) => m.id === selectedData.parentId)?.name : ""}
+          title={selectedData.isSpouse ? "Edit Spouse" : "Edit Family Member"}
+          description={selectedData.isSpouse ? "Update spouse information" : "Update member information"}
+          initialMode={selectedData.isSpouse ? "spouse" : "person"}
+          parentGender={selectedData.isSpouse && selectedData.parentId ? members.find((m: any) => m.id === selectedData.parentId)?.gender ?? null : null}
           onSubmit={async (data) => {
             try {
               toast.success(`${data.name} updated successfully!`);
@@ -269,6 +273,11 @@ const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data, members 
           existingMembers={members}
           defaultParentId={null}
           editingMember={null}
+          parentName={addParentChildId ? members.find((m: any) => m.id === addParentChildId)?.name : ""}
+          title="Add Parent"
+          description="Add a parent to this family member"
+          initialMode="person"
+          parentGender={null}
           onSubmit={async (data) => {
             try {
               toast.success(`${data.name} added as parent!`);
@@ -291,6 +300,11 @@ const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data, members 
           existingMembers={members}
           defaultParentId={addChildParentId}
           editingMember={null}
+          parentName={addChildParentId ? members.find((m: any) => m.id === addChildParentId)?.name : ""}
+          title="Add Child"
+          description="Add a child to this family member"
+          initialMode="person"
+          parentGender={addChildParentId ? members.find((m: any) => m.id === addChildParentId)?.gender : null}
           onSubmit={async (data) => {
             try {
               toast.success(`${data.name} added as child!`);
@@ -307,7 +321,32 @@ const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data, members 
 
 
       {/* Add Spouse Modal */}
-      <AddPersonModal
+      {
+        addSpouseModal && addSpouseNodeId && (<MemberFormModal
+          open={addSpouseModal}
+          onClose={() => setAddSpouseModal(false)}
+          parentName={addSpouseNodeId ? findNode(addSpouseNodeId)?.name || 'Unknown' : 'Unknown'}
+          title="Add Spouse"
+          description={`Adding spouse to ${addSpouseNodeId ? findNode(addSpouseNodeId)?.name || 'Unknown' : 'Unknown'}`}
+          initialMode="spouse"
+          parentGender={addSpouseNodeId ? getNodeGender(addSpouseNodeId) ?? null : null}
+          existingMembers={members}
+          defaultParentId={addSpouseNodeId}
+          editingMember={null}
+          onSubmit={async (data) => {
+            try {
+              toast.success(`${data.name} added as spouse!`);
+              setAddSpouseModal(false);
+              setAddSpouseNodeId(null);
+              router.refresh();
+            } catch (error) {
+              console.error('Error creating spouse:', error);
+              toast.error('Failed to add spouse');
+            }
+          }}
+        />)
+      }
+      {/* <AddPersonModal
         open={addSpouseModal}
         onClose={() => setAddSpouseModal(false)}
         parentName={addSpouseNodeId ? findNode(addSpouseNodeId)?.name || 'Unknown' : 'Unknown'}
@@ -322,7 +361,7 @@ const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data, members 
             setAddSpouseNodeId(null);
           }
         }}
-      />
+      /> */}
 
       <DeleteMemberDialog
         open={showDeleteDialog}

@@ -3,47 +3,6 @@ import { useState, useCallback } from 'react';
 import { FamilyNode, Spouse, Gender, SpouseType } from '@/types';
 import { createFamilyMember } from '@/lib/actions/family-member';
 
-const SAMPLE_DATA: FamilyNode = {
-  id: '1',
-  name: 'Robert Smith',
-  gender: 'male',
-  birthYear: 1955,
-  spouses: [
-    { id: '2', name: 'Mary Smith', gender: 'female', type: 'current', birthYear: 1958 },
-    { id: '3', name: 'Jane Doe', gender: 'female', type: 'ex', birthYear: 1960 },
-  ],
-  children: [
-    {
-      id: '4',
-      name: 'James Smith',
-      gender: 'male',
-      birthYear: 1980,
-      spouses: [
-        { id: '5', name: 'Sarah Smith', gender: 'female', type: 'current', birthYear: 1982 },
-      ],
-      children: [
-        { id: '8', name: 'Emma Smith', gender: 'female', birthYear: 2010, spouses: [], children: [] },
-      ],
-    },
-    {
-      id: '6',
-      name: 'Lisa Smith',
-      gender: 'female',
-      birthYear: 1983,
-      spouses: [],
-      children: [],
-    },
-    {
-      id: '7',
-      name: 'Tom Doe',
-      gender: 'male',
-      birthYear: 1985,
-      spouses: [],
-      children: [],
-    },
-  ],
-};
-
 let nextId = 100;
 const genId = () => String(++nextId);
 

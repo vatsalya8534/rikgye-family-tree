@@ -44,6 +44,11 @@ interface MemberFormModalProps {
   existingMembers: FamilyMember[];
   editingMember: FamilyMember | null;
   defaultParentId: string | null;
+  parentName: string;
+  title: string;
+  description: string;
+  initialMode: "person" | "spouse";
+  parentGender: Gender | null;
 }
 
 const getGenderFromRelation = (relation: string): Gender => {
@@ -51,16 +56,15 @@ const getGenderFromRelation = (relation: string): Gender => {
     case "FATHER":
     case "SON":
     case "HUSBAND":
+    case "EX_HUSBAND":
       return Gender.MALE;
     case "MOTHER":
     case "DAUGHTER":
     case "WIFE":
     case "EX_WIFE":
       return Gender.FEMALE;
-    case "SPOUSE":
-      return Gender.OTHER;
     default:
-      return Gender.OTHER;
+      return Gender.MALE;
   }
 };
 
@@ -71,11 +75,24 @@ const MemberFormModal = ({
   existingMembers,
   editingMember,
   defaultParentId,
+  parentName,
+  title,
+  description,
+  initialMode,
+  parentGender
+
 }: MemberFormModalProps) => {
   const router = useRouter();
 
-  console.log(defaultParentId);
-  
+  // Set default relation for spouse mode
+  let defaultRelation = "";
+  if (initialMode === "spouse") {
+    if (parentGender === Gender.MALE) {
+      defaultRelation = "WIFE";
+    } else if (parentGender === Gender.FEMALE) {
+      defaultRelation = "HUSBAND";
+    }
+  }
 
   const form = useForm<FormData>({
     resolver: zodResolver(familyMemberSchema) as any,
@@ -94,14 +111,30 @@ const MemberFormModal = ({
         marriageDate: editingMember.marriageDate
           ? editingMember.marriageDate.split("T")[0]
           : "",
+        type: editingMember.type ?? "",
       }
       : {
         ...familyMemberDefaultValues,
         image: [],
         parentId: defaultParentId ?? null,
-        relation: "",
+        relation: defaultRelation,
+        type: "",
       },
   });
+
+  let relationWatch = form.watch("relation");
+
+  useEffect(() => {
+    if (relationWatch) {
+      if (relationWatch.toLowerCase().includes("ex")) {
+        form.setValue("type", "ex");
+      } else {
+        form.setValue("type", "current");
+      }
+    } else {
+      form.setValue("type", "");
+    }
+  }, [relationWatch]);
 
   useEffect(() => {
     if (editingMember) {
@@ -118,23 +151,26 @@ const MemberFormModal = ({
           : editingMember.image
             ? [editingMember.image]
             : [],
-        relation: editingMember.relation ?? "",
+        relation: editingMember.relation ?? defaultRelation,
         parentId: editingMember.parentId ?? defaultParentId ?? null,
         birthDate: formatDate(editingMember.birthDate),
         marriageDate: formatDate(editingMember.marriageDate),
+        type: editingMember.type ?? "",
       });
     } else {
       form.reset({
         ...familyMemberDefaultValues,
         image: [],
         parentId: defaultParentId ?? null,
-        relation: "",
+        relation: defaultRelation,
+        type: "",
       });
     }
-  }, [editingMember, defaultParentId]);
+
+  }, [editingMember, defaultParentId, defaultRelation]);
 
   const handleFormSubmit: SubmitHandler<FormData> = async (values) => {
-    
+
     const uploadedUrls: string[] = [];
     if (values.image) {
       for (const img of values.image) {
@@ -156,8 +192,13 @@ const MemberFormModal = ({
     let parentId: string | null = values.parentId ?? null;
     let spouseId: string | null = null;
     const relation = values.relation || '';
+    const isEditingSpouse = editingMember && initialMode === "spouse";
 
-    if (["WIFE", "SPOUSE", "EX_WIFE"].includes(relation)) {
+    // For spouse editing, treat parentId as spouseId
+    if (isEditingSpouse) {
+      spouseId = values.parentId ?? null;
+      parentId = null;
+    } else if (["WIFE", "SPOUSE", "EX_WIFE", "HUSBAND", "EX_HUSBAND"].includes(relation)) {
       spouseId = values.parentId ?? null;
       parentId = null;
     }
@@ -206,7 +247,7 @@ const MemberFormModal = ({
         <DialogHeader className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white px-6 py-5 shadow-md">
           <div className="flex items-center justify-between w-full">
             <DialogTitle className="text-xl font-semibold">
-              {editingMember ? "Edit Member" : "Add Family Member"}
+              {title} {parentName && `for ${parentName}`}
             </DialogTitle>
             <button onClick={onClose} className="p-1 rounded-full hover:bg-white/20 transition">
               <X className="h-5 w-5" />
@@ -245,7 +286,7 @@ const MemberFormModal = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Name</FormLabel>
-                          <Input {...field} className="rounded-lg shadow-sm" />
+                          <Input  {...field} className="rounded-lg shadow-sm" />
                         </FormItem>
                       )}
                     />
@@ -296,7 +337,7 @@ const MemberFormModal = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Birth Place</FormLabel>
-                          <Input {...field} className="rounded-lg shadow-sm" />
+                          <Input {...field} value={field.value ?? ""} className="rounded-lg shadow-sm" />
                         </FormItem>
                       )}
                     />
@@ -307,7 +348,7 @@ const MemberFormModal = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Current Residence</FormLabel>
-                          <Input {...field} className="rounded-lg shadow-sm" />
+                          <Input {...field} value={field.value ?? ""} className="rounded-lg shadow-sm" />
                         </FormItem>
                       )}
                     />
@@ -318,7 +359,7 @@ const MemberFormModal = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Profession</FormLabel>
-                          <Input {...field} className="rounded-lg shadow-sm" />
+                          <Input {...field} value={field.value ?? ""} className="rounded-lg shadow-sm" />
                         </FormItem>
                       )}
                     />
@@ -329,7 +370,7 @@ const MemberFormModal = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Email</FormLabel>
-                          <Input {...field} className="rounded-lg shadow-sm" />
+                          <Input {...field} value={field.value ?? ""} className="rounded-lg shadow-sm" />
                         </FormItem>
                       )}
                     />
@@ -340,7 +381,7 @@ const MemberFormModal = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Phone</FormLabel>
-                          <Input {...field} className="rounded-lg shadow-sm" />
+                          <Input {...field} value={field.value ?? ""} className="rounded-lg shadow-sm" />
                         </FormItem>
                       )}
                     />
@@ -428,17 +469,18 @@ const MemberFormModal = ({
                         <FormItem>
                           <FormLabel>Relation</FormLabel>
                           <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger className="rounded-lg shadow-sm">
+                            <SelectTrigger className="rounded-lg shadow-sm w-full">
                               <SelectValue placeholder="Select relation" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="FATHER">Father</SelectItem>
                               <SelectItem value="MOTHER">Mother</SelectItem>
-                              <SelectItem value="CHILD">Child</SelectItem>
-                              <SelectItem value="STEP_CHILD">Step Child</SelectItem>
+                              <SelectItem value="SON">SON</SelectItem>
+                              <SelectItem value="DAUGHTER">DAUGHTER</SelectItem>
                               <SelectItem value="WIFE">Wife</SelectItem>
                               <SelectItem value="EX_WIFE">Ex Wife</SelectItem>
-                              <SelectItem value="SPOUSE">Spouse</SelectItem>
+                              <SelectItem value="HUSBAND">Husband</SelectItem>
+                              <SelectItem value="EX_HUSBAND">Ex Husband</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormItem>
@@ -448,35 +490,35 @@ const MemberFormModal = ({
                     <FormField control={form.control} name="marriagePlace" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Marriage Place</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
+                        <Input {...field} value={field.value ?? ""} className="rounded-lg shadow-sm" />
                       </FormItem>
                     )} />
 
                     <FormField control={form.control} name="marriageDate" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Marriage Date</FormLabel>
-                        <Input type="date" {...field} className="rounded-lg shadow-sm" />
+                        <Input type="date"  {...field} className="rounded-lg shadow-sm" />
                       </FormItem>
                     )} />
 
                     <FormField control={form.control} name="spouseMaidenName" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Spouse Maiden Name</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
+                        <Input {...field} value={field.value ?? ""} className="rounded-lg shadow-sm" />
                       </FormItem>
                     )} />
 
                     <FormField control={form.control} name="spouseFather" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Spouse Father</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
+                        <Input {...field} value={field.value ?? ""} className="rounded-lg shadow-sm" />
                       </FormItem>
                     )} />
 
                     <FormField control={form.control} name="spouseMother" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Spouse Mother</FormLabel>
-                        <Input {...field} className="rounded-lg shadow-sm" />
+                        <Input {...field} value={field.value ?? ""} className="rounded-lg shadow-sm" />
                       </FormItem>
                     )} />
                   </div>
@@ -496,7 +538,7 @@ const MemberFormModal = ({
                         <FormField control={form.control} name="causeOfDeath" render={({ field }) => (
                           <FormItem>
                             <FormLabel>Cause of Death</FormLabel>
-                            <Input {...field} className="rounded-lg shadow-sm" />
+                            <Input {...field} value={field.value ?? ""} className="rounded-lg shadow-sm" />
                           </FormItem>
                         )} />
                         <FormField control={form.control} name="deathDate" render={({ field }) => (

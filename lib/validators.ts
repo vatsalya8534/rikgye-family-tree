@@ -70,49 +70,54 @@ export const passwordSchema = z
     path: ["confirmPassword"],
   });
 
+const emptyToUndefined = z.preprocess(
+  (val) => (val === "" || val === null ? undefined : val),
+  z.string().optional()
+);
 
 export const familyMemberSchema = z.object({
   name: z.string().min(1, "Name is required"),
 
+  // --- IMAGES ---
   image: z.array(
     z.union([
       z.instanceof(File),
-      z.string().min(1),
+      z.string().min(1)
     ])
-  ).optional(), 
+  ).optional().default([]),
 
-  gender: z.enum(Object.values(Gender)).optional(),
+  // --- BASIC INFO ---
+  gender: z.nativeEnum(Gender).optional(),
+  birthDate: emptyToUndefined,
+  birthPlace: emptyToUndefined,
+  isAlive: z.boolean().default(true),
+  currentResidence: emptyToUndefined,
 
-  birthDate: z.string().optional(),
-  birthPlace: z.string().optional(),
+  // --- DEATH INFO (Only relevant if isAlive is false) ---
+  deathDate: emptyToUndefined,
+  deathPlace: emptyToUndefined,
+  causeOfDeath: emptyToUndefined,
 
-  isAlive: z.boolean().optional(),
+  // --- MARRIAGE INFO ---
+  marriageDate: emptyToUndefined,
+  marriagePlace: emptyToUndefined,
+  spouseMaidenName: emptyToUndefined,
+  spouseFather: emptyToUndefined,
+  spouseMother: emptyToUndefined,
 
-  currentResidence: z.string().optional(),
+  // --- CONTACT & PROFESSION ---
+  profession: emptyToUndefined,
+  // email: z.preprocess(
+  //   (val) => (val === "" ? undefined : val),
+  //   z.string().email("Invalid email format").optional()
+  // ),
+  email: emptyToUndefined,
+  phone: emptyToUndefined,
+  type: z.string().optional(),
 
-  deathDate: z.string().nullable().optional(),
-  deathPlace: z.string().optional(),
-  causeOfDeath: z.string().optional(),
-
-  marriageDate: z.string().optional(),
-  marriagePlace: z.string().optional(),
-
-  spouseMaidenName: z.string().optional(),
-  spouseFather: z.string().optional(),
-  spouseMother: z.string().optional(),
-
-  profession: z.string().optional(),
-  email: z
-    .string()
-    .email("Invalid email")
-    .optional()
-    .or(z.literal("")),
-
-  phone: z.string().optional(),
-
+  // --- RELATIONSHIPS ---
   parentId: z.string().nullable().optional(),
   spouseId: z.string().nullable().optional(),
   userId: z.string().nullable().optional(),
-
-  relation: z.string().optional(),
+  relation: emptyToUndefined,
 });

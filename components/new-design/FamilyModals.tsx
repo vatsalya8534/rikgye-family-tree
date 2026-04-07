@@ -23,17 +23,20 @@ interface AddPersonModalProps {
 
 export const AddPersonModal: React.FC<AddPersonModalProps> = ({ open, onClose, onAdd, parentName, title, description, placeholder, initialMode, parentGender }) => {
   const [name, setName] = useState('');
-  const [gender, setGender] = useState<Gender>('male');
+  const [gender, setGender] = useState<Gender>('MALE');
   const [birthYear, setBirthYear] = useState('');
   const [mode, setMode] = useState<AddMode>(initialMode || 'child');
   const [spouseType, setSpouseType] = useState<SpouseType>('current');
+
+  console.log(gender);
+  
 
   useEffect(() => {
     if (initialMode) {
       setMode(initialMode);
       // If adding a spouse and parent gender is known, set opposite gender
       if (initialMode === 'spouse' && parentGender) {
-        setGender(parentGender === 'male' ? 'female' : 'male');
+        setGender(parentGender === 'MALE' ? 'FEMALE' : 'MALE');
       }
     }
   }, [initialMode, open, parentGender]);
@@ -76,8 +79,8 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({ open, onClose, o
               <Select value={spouseType} onValueChange={(v) => setSpouseType(v as SpouseType)}>
                 <SelectTrigger className="bg-secondary border-border text-foreground"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="current">Current {gender === 'male' ? 'Husband' : 'Wife'}</SelectItem>
-                  <SelectItem value="ex">Ex-{gender === 'male' ? 'Husband' : 'Wife'}</SelectItem>
+                  <SelectItem value="current">Current {gender === 'MALE' ? 'Husband' : 'Wife'}</SelectItem>
+                  <SelectItem value="ex">Ex-{gender === 'MALE' ? 'Husband' : 'Wife'}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -173,8 +176,8 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({ open, onClose,
               <Select value={sType} onValueChange={(v) => setSType(v as SpouseType)}>
                 <SelectTrigger className="bg-secondary border-border text-foreground"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="current">Current {gender === 'male' ? 'Husband' : 'Wife'}</SelectItem>
-                  <SelectItem value="ex">Ex-{gender === 'male' ? 'Husband' : 'Wife'}</SelectItem>
+                  <SelectItem value="current">Current {gender === 'MALE' ? 'Husband' : 'Wife'}</SelectItem>
+                  <SelectItem value="ex">Ex-{gender === 'MALE' ? 'Husband' : 'Wife'}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -212,7 +215,7 @@ export const AddParentModal: React.FC<AddParentModalProps> = ({
   placeholder = "Enter parent name" 
 }) => {
   const [name, setName] = useState('');
-  const [gender, setGender] = useState<Gender>('male');
+  const [gender, setGender] = useState<Gender>('MALE');
   const [birthYear, setBirthYear] = useState('');
 
   const handleSubmit = () => {

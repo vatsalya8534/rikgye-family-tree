@@ -58,8 +58,8 @@ export async function createFamilyMember(data: Omit<any, "id">) {
   return await prisma.$transaction(async (tx) => {
     const existingMember = parentId
       ? await tx.familyMember.findUnique({
-          where: { id: parentId },
-        })
+        where: { id: parentId },
+      })
       : null;
 
     let parentToAssign: string | null = null;
@@ -92,6 +92,8 @@ export async function createFamilyMember(data: Omit<any, "id">) {
         profession: data.profession || null,
         email: data.email || null,
         phone: data.phone || null,
+        relation: data.relation || null,
+        type: data.type ?? "",
 
         parent: parentToAssign
           ? { connect: { id: parentToAssign } }
@@ -256,6 +258,8 @@ export async function updateFamilyMember(data: any) {
         profession: data.profession,
         email: data.email,
         phone: data.phone,
+        relation: data.relation,
+        type: data.type ?? "",
 
         parent: data.parentId
           ? { connect: { id: data.parentId } }

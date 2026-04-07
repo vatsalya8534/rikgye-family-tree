@@ -11,7 +11,7 @@ name: string;
 members: FamilyMember[];
 }
 
-export type Gender = 'male' | 'female';
+export type Gender = 'MALE' | 'FEMALE';
 export type SpouseType = 'current' | 'ex';
 
 export interface Person {

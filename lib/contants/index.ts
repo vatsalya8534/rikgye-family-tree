@@ -26,7 +26,7 @@ export const cmsDefaultValues = {
 
 export const familyMemberDefaultValues = {
     name: "",
-    image: "",
+    image: [],
     gender: Gender.MALE,
     birthDate: "",
     birthPlace: "",
@@ -46,4 +46,5 @@ export const familyMemberDefaultValues = {
     phone: "",
     parentId: null,
     userId: null,
+    type: "",
 }

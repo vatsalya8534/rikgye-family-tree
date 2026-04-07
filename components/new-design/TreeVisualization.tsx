@@ -3,13 +3,14 @@
 import React, { useRef, useEffect, useState, useMemo } from "react";
 import * as d3 from "d3";
 import { createRoot } from "react-dom/client";
+import { Gender, Spouse as OriginalSpouse } from "@/types";
 
 // ------------------- Types ------------------- //
 
 export interface FamilyNode {
   id: string;
   name: string;
-  gender: "male" | "female" | "other";
+  gender: Gender;
   birthYear?: number;
   isAlive?: boolean;
   spouses: FamilyNodeSpouse[];
@@ -19,7 +20,7 @@ export interface FamilyNode {
 export interface FamilyNodeSpouse {
   id: string;
   name: string;
-  gender: "male" | "female" | "other";
+  gender: Gender;
   birthYear?: number;
   type: "current" | "ex";
 }
@@ -27,7 +28,8 @@ export interface FamilyNodeSpouse {
 export interface LayoutNode {
   id: string;
   name: string;
-  gender: "male" | "female" | "other";
+  gender: Gender;
+
   birthYear?: number;
   x: number;
   y: number;
@@ -51,7 +53,8 @@ interface TreeVisualizationProps {
   onNodeClick: (id: string, type: "person" | "spouse") => void;
   onEdit?: (id: string, type: "person" | "spouse") => void;
   onDelete?: (id: string) => void;
-  onAdd?: (id: string) => void; // Added onAdd prop
+  onAdd?: (id: string) => void;
+  onAddSpouse?: (id: string) => void;
   selectedId?: string | null;
 }
 
@@ -75,7 +78,8 @@ interface TreeNodeCardProps {
   onClick: (id: string, type: "person" | "spouse") => void;
   onEdit?: (id: string, type: "person" | "spouse") => void;
   onDelete?: (id: string) => void;
-  onAdd?: (id: string) => void; // Added onAdd prop
+  onAdd?: (id: string) => void;
+  onAddSpouse?: (id: string) => void;
   isSelected?: boolean;
   isOnPath?: boolean; 
 }
@@ -86,11 +90,12 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
   onEdit,
   onDelete,
   onAdd,
+  onAddSpouse,
   isSelected = false,
   isOnPath = false,
 }) => {
   const [hovered, setHovered] = useState(false);
-  const isMale = node.gender === "male";
+  const isMale = node.gender === "MALE";
   const birthYear = node.birthYear || "";
   const aliveStatus = node.isAlive ? "Alive" : "Dead";
   
@@ -117,12 +122,27 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
       {/* Hover Buttons */}
       {hovered && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-1 z-50">
-          {/* ADD BUTTON */}
+          {/* ADD CHILD BUTTON */}
           <button
-            onClick={(e) => { e.stopPropagation(); onAdd?.(node.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              const targetId = node.type === "spouse" ? node.parentId ?? node.id : node.id;
+              onAdd?.(targetId);
+            }}
             className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
-            title="Add Member"
+            title="Add Child"
           >＋</button>
+
+          {/* ADD SPOUSE BUTTON */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const targetId = node.type === "spouse" ? node.parentId ?? node.id : node.id;
+              onAddSpouse?.(targetId);
+            }}
+            className="w-8 h-8 bg-pink-500 hover:bg-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+            title="Add Spouse"
+          >♥</button>
 
           <button
             onClick={(e) => { e.stopPropagation(); onEdit?.(node.id, node.type); }}
@@ -249,7 +269,8 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({
   onNodeClick,
   onEdit,
   onDelete,
-  onAdd, // Destructure onAdd
+  onAdd,
+  onAddSpouse,
   selectedId,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -312,7 +333,8 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({
           onClick={onNodeClick}
           onEdit={onEdit}
           onDelete={onDelete}
-          onAdd={onAdd} // Pass onAdd to card
+          onAdd={onAdd}
+          onAddSpouse={onAddSpouse}
           isSelected={node.id === selectedId}
           isOnPath={isNodeOnPath}
         />

@@ -1,142 +1,240 @@
 "use client";
-import React, { useRef, useEffect, useCallback, useState } from 'react';
-import * as d3 from 'd3';
-import { FamilyNode } from '@/types';
 
-interface TreeVisualizationProps {
-  data: FamilyNode;
-  onNodeClick: (id: string, type: 'person' | 'spouse') => void;
-  onEdit?: (id: string, type: 'person' | 'spouse') => void;
-  onDelete?: (id: string) => void;
-  onAddParent?: (childId: string) => void;
-  onAddChild?: (parentId: string) => void;
-  onAddSpouse?: (nodeId: string) => void;
-  selectedId?: string | null;
-}
+import React, { useRef, useEffect, useState, useMemo } from "react";
+import * as d3 from "d3";
+import { createRoot } from "react-dom/client";
 
-interface LayoutNode {
+// ------------------- Types ------------------- //
+
+export interface FamilyNode {
   id: string;
   name: string;
-  gender: string;
+  gender: "male" | "female" | "other";
+  birthYear?: number;
+  isAlive?: boolean;
+  spouses: FamilyNodeSpouse[];
+  children: FamilyNode[];
+}
+
+export interface FamilyNodeSpouse {
+  id: string;
+  name: string;
+  gender: "male" | "female" | "other";
+  birthYear?: number;
+  type: "current" | "ex";
+}
+
+export interface LayoutNode {
+  id: string;
+  name: string;
+  gender: "male" | "female" | "other";
   birthYear?: number;
   x: number;
   y: number;
-  type: 'person' | 'spouse';
-  spouseType?: 'current' | 'ex';
+  type: "person" | "spouse";
+  spouseType?: "current" | "ex";
   parentId?: string;
   level: number;
+  isAlive?: boolean;
 }
 
-interface LayoutLink {
+export interface LayoutLink {
   source: { x: number; y: number };
   target: { x: number; y: number };
   sourceId: string;
   targetId: string;
-  type: 'current' | 'ex' | 'child';
+  type: "current" | "ex" | "child";
 }
 
-const NODE_W = 160;
-const NODE_H = 64;
+interface TreeVisualizationProps {
+  data: FamilyNode;
+  onNodeClick: (id: string, type: "person" | "spouse") => void;
+  onEdit?: (id: string, type: "person" | "spouse") => void;
+  onDelete?: (id: string) => void;
+  onAdd?: (id: string) => void; // Added onAdd prop
+  selectedId?: string | null;
+}
+
+// ------------------- Constants ------------------- //
+
+export const CARD_W = 150;
+export const CARD_H = 180;
+export const SPOUSE_GAP = 25;
 const H_GAP = 40;
-const V_GAP = 120;
-const SPOUSE_GAP = 20;
+const V_GAP = 100;
+
+const OVERFLOW_TOP = 60;   
+const OVERFLOW_SIDES = 20; 
+const FO_WIDTH = CARD_W + (OVERFLOW_SIDES * 2);
+const FO_HEIGHT = CARD_H + OVERFLOW_TOP + 20;
+
+// ------------------- Node Card ------------------- //
+
+interface TreeNodeCardProps {
+  node: LayoutNode;
+  onClick: (id: string, type: "person" | "spouse") => void;
+  onEdit?: (id: string, type: "person" | "spouse") => void;
+  onDelete?: (id: string) => void;
+  onAdd?: (id: string) => void; // Added onAdd prop
+  isSelected?: boolean;
+  isOnPath?: boolean; 
+}
+
+const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
+  node,
+  onClick,
+  onEdit,
+  onDelete,
+  onAdd,
+  isSelected = false,
+  isOnPath = false,
+}) => {
+  const [hovered, setHovered] = useState(false);
+  const isMale = node.gender === "male";
+  const birthYear = node.birthYear || "";
+  const aliveStatus = node.isAlive ? "Alive" : "Dead";
+  
+  const pathBorderColor = isOnPath 
+    ? "border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.4)]" 
+    : (isMale ? "border-blue-400" : "border-pink-400");
+    
+  const pathAvatarColor = isOnPath ? "bg-amber-500" : (isMale ? "bg-blue-400" : "bg-pink-400");
+  const aliveColor = node.isAlive ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800";
+
+  return (
+    <div
+      className="relative w-full h-full transition-all duration-300"
+      style={{ 
+        paddingTop: OVERFLOW_TOP, 
+        paddingLeft: OVERFLOW_SIDES,
+        paddingRight: OVERFLOW_SIDES,
+        transform: hovered ? "scale(1.03)" : "scale(1)"
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={() => onClick(node.id, node.type)}
+    >
+      {/* Hover Buttons */}
+      {hovered && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-1 z-50">
+          {/* ADD BUTTON */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onAdd?.(node.id); }}
+            className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+            title="Add Member"
+          >＋</button>
+
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit?.(node.id, node.type); }}
+            className="w-8 h-8 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+            title="Edit"
+          >✏</button>
+
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete?.(node.id); }}
+            className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+            title="Delete"
+          >🗑</button>
+        </div>
+      )}
+
+      <div
+        className={`relative flex flex-col items-center pt-14 bg-white shadow-lg rounded-2xl border-[3px] transition-all duration-500
+          ${pathBorderColor}
+          ${isSelected ? "ring-4 ring-yellow-400 ring-offset-2" : ""}`}
+        style={{ width: CARD_W, height: CARD_H }}
+      >
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-md transition-colors duration-500 ${pathAvatarColor}`}>
+            {node.name.charAt(0)}
+          </div>
+        </div>
+
+        <p className={`mt-2 text-sm font-semibold text-center truncate px-2 w-full ${isOnPath ? "text-amber-800" : "text-gray-800"}`}>
+          {node.name}
+        </p>
+        <p className="text-[12px] text-gray-500">{birthYear}</p>
+        <span className={`mt-2 text-[10px] px-2 py-[2px] rounded-full font-medium ${aliveColor}`}>
+          {aliveStatus}
+        </span>
+
+        <div className="absolute top-2 right-2 flex items-center">
+          <div className={`w-8 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shadow-sm 
+            ${isOnPath ? "bg-amber-600 text-white" : "bg-gray-800 text-yellow-400"}`}>
+            L{node.level}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ------------------- Layout Functions ------------------- //
 
 function placeNodes(node: FamilyNode, x: number, y: number, nodes: LayoutNode[], level: number = 0): number {
-  const spouseCount = node.spouses.length;
-  const currentWives = node.spouses.filter(s => s.type === 'current');
-  const exWives = node.spouses.filter(s => s.type === 'ex');
+  const currentWives = node.spouses.filter((s) => s.type === "current");
+  const exWives = node.spouses.filter((s) => s.type === "ex");
+  const personX = x + currentWives.length * (CARD_W + SPOUSE_GAP);
 
-  const personX = x + currentWives.length * (NODE_W + SPOUSE_GAP);
-
-  nodes.push({
-    id: node.id, name: node.name, gender: node.gender, birthYear: node.birthYear,
-    x: personX, y, type: 'person', level,
-  });
+  nodes.push({ id: node.id, name: node.name, gender: node.gender, birthYear: node.birthYear, x: personX, y, type: "person", level, isAlive: node.isAlive });
 
   currentWives.forEach((spouse, i) => {
-    nodes.push({
-      id: spouse.id, name: spouse.name, gender: spouse.gender, birthYear: spouse.birthYear,
-      x: personX - (i + 1) * (NODE_W + SPOUSE_GAP), y, type: 'spouse', spouseType: 'current', parentId: node.id, level,
-    });
+    nodes.push({ id: spouse.id, name: spouse.name, gender: spouse.gender, birthYear: spouse.birthYear, x: personX - (i + 1) * (CARD_W + SPOUSE_GAP), y, type: "spouse", spouseType: "current", parentId: node.id, level });
   });
 
   exWives.forEach((spouse, i) => {
-    nodes.push({
-      id: spouse.id, name: spouse.name, gender: spouse.gender, birthYear: spouse.birthYear,
-      x: personX + NODE_W + SPOUSE_GAP + i * (NODE_W + SPOUSE_GAP), y, type: 'spouse', spouseType: 'ex', parentId: node.id, level,
-    });
+    nodes.push({ id: spouse.id, name: spouse.name, gender: spouse.gender, birthYear: spouse.birthYear, x: personX + CARD_W + SPOUSE_GAP + i * (CARD_W + SPOUSE_GAP), y, type: "spouse", spouseType: "ex", parentId: node.id, level });
   });
 
-  const unitWidth = NODE_W + spouseCount * (NODE_W + SPOUSE_GAP);
-  if (node.children.length === 0) return unitWidth;
+  const unitWidth = CARD_W + node.spouses.length * (CARD_W + SPOUSE_GAP);
+  if (!node.children.length) return unitWidth;
 
-  const childY = y + NODE_H + V_GAP;
+  const childY = y + CARD_H + V_GAP;
   let childX = x;
   const childWidths: number[] = [];
 
-  node.children.forEach(child => {
+  node.children.forEach((child) => {
     const w = placeNodes(child, childX, childY, nodes, level + 1);
     childWidths.push(w);
     childX += w + H_GAP;
   });
 
   const totalChildrenWidth = childWidths.reduce((a, b) => a + b, 0) + (node.children.length - 1) * H_GAP;
-  const parentCenterX = personX + NODE_W / 2;
+  const parentCenterX = personX + CARD_W / 2;
   const childrenCenterX = x + totalChildrenWidth / 2;
   const offset = parentCenterX - childrenCenterX;
 
   if (offset !== 0) {
     const collectIds = (n: FamilyNode): string[] => {
-      const ids = [n.id, ...n.spouses.map(s => s.id)];
-      n.children.forEach(c => ids.push(...collectIds(c)));
+      const ids = [n.id, ...n.spouses.map((s) => s.id)];
+      n.children.forEach((c) => ids.push(...collectIds(c)));
       return ids;
     };
     const idsToShift = new Set(node.children.flatMap(collectIds));
-    nodes.forEach(n => { if (idsToShift.has(n.id)) n.x += offset; });
+    nodes.forEach((n) => { if (idsToShift.has(n.id)) n.x += offset; });
   }
 
   return Math.max(unitWidth, totalChildrenWidth + (offset > 0 ? offset : 0));
 }
 
 function computeLinks(node: FamilyNode, nodes: LayoutNode[], links: LayoutLink[]) {
-  const personNode = nodes.find(n => n.id === node.id)!;
-
-  // Spouse links
-  node.spouses.forEach(spouse => {
-    const spouseNode = nodes.find(n => n.id === spouse.id)!;
-    const leftNode = spouseNode.x < personNode.x ? spouseNode : personNode;
-    const rightNode = spouseNode.x < personNode.x ? personNode : spouseNode;
-    links.push({
-      source: { x: leftNode.x + NODE_W, y: leftNode.y + NODE_H / 2 },
-      target: { x: rightNode.x, y: rightNode.y + NODE_H / 2 },
-      sourceId: node.id,
-      targetId: spouse.id,
-      type: spouse.type,
-    });
+  const personNode = nodes.find((n) => n.id === node.id)!;
+  node.spouses.forEach((spouse) => {
+    const spouseNode = nodes.find((n) => n.id === spouse.id)!;
+    const left = spouseNode.x < personNode.x ? spouseNode : personNode;
+    const right = spouseNode.x < personNode.x ? personNode : spouseNode;
+    links.push({ source: { x: left.x + CARD_W, y: left.y + CARD_H / 2 }, target: { x: right.x, y: right.y + CARD_H / 2 }, sourceId: node.id, targetId: spouse.id, type: spouse.type });
   });
-
-  // Child links
-  node.children.forEach(child => {
-    const childNode = nodes.find(n => n.id === child.id)!;
-    links.push({
-      source: { x: personNode.x + NODE_W / 2, y: personNode.y + NODE_H },
-      target: { x: childNode.x + NODE_W / 2, y: childNode.y },
-      sourceId: node.id,
-      targetId: child.id,
-      type: 'child',
-    });
+  node.children.forEach((child) => {
+    const childNode = nodes.find((n) => n.id === child.id)!;
+    links.push({ source: { x: personNode.x + CARD_W / 2, y: personNode.y + CARD_H }, target: { x: childNode.x + CARD_W / 2, y: childNode.y }, sourceId: node.id, targetId: child.id, type: "child" });
     computeLinks(child, nodes, links);
   });
 }
 
-// Find ancestor path from root to a target node
 function findAncestorPath(node: FamilyNode, targetId: string): string[] | null {
   if (node.id === targetId) return [node.id];
-  // Check spouses
-  for (const spouse of node.spouses) {
-    if (spouse.id === targetId) return [node.id, spouse.id];
-  }
-  // Check children recursively
+  for (const spouse of node.spouses) if (spouse.id === targetId) return [node.id, spouse.id];
   for (const child of node.children) {
     const path = findAncestorPath(child, targetId);
     if (path) return [node.id, ...path];
@@ -144,294 +242,110 @@ function findAncestorPath(node: FamilyNode, targetId: string): string[] | null {
   return null;
 }
 
-const TreeVisualization: React.FC<TreeVisualizationProps> = ({ data, onNodeClick, onEdit, onDelete, onAddParent, onAddChild, onAddSpouse, selectedId }) => {
+// ------------------- Main Component ------------------- //
+
+const TreeVisualization: React.FC<TreeVisualizationProps> = ({
+  data,
+  onNodeClick,
+  onEdit,
+  onDelete,
+  onAdd, // Destructure onAdd
+  selectedId,
+}) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [hoveredNode, setHoveredNode] = useState<{ id: string; type: 'person' | 'spouse'; x: number; y: number; parentId?: string } | null>(null);
-  const [zoomTransform, setZoomTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
-  const [isHoveringButtons, setIsHoveringButtons] = useState(false);
 
-  const renderTree = useCallback(() => {
-    if (!svgRef.current || !containerRef.current) return;
+  const nodes: LayoutNode[] = [];
+  const links: LayoutLink[] = [];
+  placeNodes(data, 0, 0, nodes);
+  computeLinks(data, nodes, links);
 
-    const nodes: LayoutNode[] = [];
-    const links: LayoutLink[] = [];
-    placeNodes(data, 50, 50, nodes);
-    computeLinks(data, nodes, links);
-
-    // Compute ancestor path for selected node
-    const ancestorPath = new Set<string>();
+  const ancestorPath = useMemo(() => {
+    const pathSet = new Set<string>();
     if (selectedId) {
       const path = findAncestorPath(data, selectedId);
-      if (path) path.forEach(id => ancestorPath.add(id));
+      if (path) path.forEach((id) => pathSet.add(id));
     }
-    const maxX = Math.max(...nodes.map(n => n.x + NODE_W)) + 100;
-    const maxY = Math.max(...nodes.map(n => n.y + NODE_H)) + 100;
+    return pathSet;
+  }, [data, selectedId]);
+
+  useEffect(() => {
+    if (!svgRef.current || !containerRef.current) return;
 
     const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove();
+    svg.selectAll("*").remove();
+    const g = svg.append("g").attr("class", "zoom-group");
 
-    const g = svg.append('g');
-
-    // Zoom behavior
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.2, 3])
-      .on('zoom', (event) => {
-        g.attr('transform', event.transform);
-        setZoomTransform(event.transform);
-      });
-
-    svg.call(zoom);
-
-    // Center the tree initially
-    const containerW = containerRef.current.clientWidth;
-    const containerH = containerRef.current.clientHeight;
-    const initialScale = Math.min(containerW / maxX, containerH / maxY, 1) * 0.9;
-    const tx = (containerW - maxX * initialScale) / 2;
-    const ty = 20;
-    svg.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(initialScale));
-
-    // Draw links
-    const linkGroup = g.append('g').attr('class', 'links');
-
-    links.forEach(link => {
+    links.forEach((link) => {
       const isOnPath = ancestorPath.has(link.sourceId) && ancestorPath.has(link.targetId);
-      if (link.type === 'child') {
+      if (link.type === "child") {
         const midY = (link.source.y + link.target.y) / 2;
-        linkGroup.append('path')
-          .attr('d', `M${link.source.x},${link.source.y} L${link.source.x},${midY} L${link.target.x},${midY} L${link.target.x},${link.target.y}`)
-          .attr('fill', 'none')
-          .attr('stroke', isOnPath ? 'hsl(48, 95%, 55%)' : 'hsl(220, 15%, 30%)')
-          .attr('stroke-width', isOnPath ? 3.5 : 2);
+        g.append("path")
+          .attr("d", `M${link.source.x},${link.source.y} L${link.source.x},${midY} L${link.target.x},${midY} L${link.target.x},${link.target.y}`)
+          .attr("fill", "none")
+          .attr("stroke", isOnPath ? "#f59e0b" : "#cbd5e1")
+          .attr("stroke-width", isOnPath ? 4 : 2);
       } else {
-        linkGroup.append('line')
-          .attr('x1', link.source.x)
-          .attr('y1', link.source.y)
-          .attr('x2', link.target.x)
-          .attr('y2', link.target.y)
-          .attr('stroke', link.type === 'current' ? 'hsl(38, 75%, 55%)' : 'hsl(0, 50%, 50%)')
-          .attr('stroke-width', 2.5)
-          .attr('stroke-dasharray', link.type === 'ex' ? '8,4' : 'none');
+        g.append("line")
+          .attr("x1", link.source.x).attr("y1", link.source.y)
+          .attr("x2", link.target.x).attr("y2", link.target.y)
+          .attr("stroke", link.type === "current" ? "#ef4444" : "#94a3b8")
+          .attr("stroke-width", 2)
+          .attr("stroke-dasharray", link.type === "ex" ? "8,4" : "none");
       }
     });
 
-    // Draw nodes
-    const nodeGroup = g.append('g').attr('class', 'nodes');
+    nodes.forEach((node) => {
+      const isNodeOnPath = ancestorPath.has(node.id);
+      const foreignObject = g.append("foreignObject")
+        .attr("x", node.x - OVERFLOW_SIDES)
+        .attr("y", node.y - OVERFLOW_TOP)
+        .attr("width", FO_WIDTH)
+        .attr("height", FO_HEIGHT)
+        .style("overflow", "visible");
 
-    nodes.forEach(node => {
-      const group = nodeGroup.append('g')
-        .attr('transform', `translate(${node.x},${node.y})`)
-        .attr('cursor', 'pointer')
-        .on('click', () => onNodeClick(node.id, node.type));
-
-      const isSelected = node.id === selectedId;
-      const isOnPath = ancestorPath.has(node.id);
-
-      // Node colors - highlight ancestor path with golden glow
-      let fillColor = 'hsl(210, 60%, 50%)'; // male
-      if (node.gender === 'female') fillColor = 'hsl(330, 60%, 55%)';
-      if (node.spouseType === 'ex') fillColor = 'hsl(0, 40%, 40%)';
-      if (isOnPath) fillColor = 'hsl(48, 90%, 45%)'; // golden highlight for path
-
-      // Shadow
-      group.append('rect')
-        .attr('x', 3)
-        .attr('y', 3)
-        .attr('width', NODE_W)
-        .attr('height', NODE_H)
-        .attr('rx', 10)
-        .attr('fill', isOnPath ? 'rgba(234, 179, 8, 0.4)' : 'rgba(0,0,0,0.3)');
-
-      // Main rect
-      group.append('rect')
-        .attr('width', NODE_W)
-        .attr('height', NODE_H)
-        .attr('rx', 10)
-        .attr('fill', fillColor)
-        .attr('stroke', isSelected ? 'hsl(38, 75%, 55%)' : isOnPath ? 'hsl(48, 90%, 60%)' : 'hsl(220, 15%, 25%)')
-        .attr('stroke-width', isSelected ? 3 : isOnPath ? 2.5 : 1.5)
-        .attr('opacity', ancestorPath.size > 0 && !isOnPath ? 0.4 : 0.95);
-
-      // Name text
-      group.append('text')
-        .attr('x', NODE_W / 2)
-        .attr('y', NODE_H / 2 - 6)
-        .attr('text-anchor', 'middle')
-        .attr('fill', 'white')
-        .attr('font-size', '13px')
-        .attr('font-weight', '600')
-        .attr('font-family', '"Space Grotesk", sans-serif')
-        .text(node.name.length > 18 ? node.name.slice(0, 16) + '…' : node.name);
-
-      // Subtitle
-      const subtitle = node.spouseType
-        ? node.spouseType === 'current' ? '💍 Wife' : '💔 Ex-Wife'
-        : node.gender === 'male' ? '♂' : '♀';
-      const yearText = node.birthYear ? ` • ${node.birthYear}` : '';
-
-      group.append('text')
-        .attr('x', NODE_W / 2)
-        .attr('y', NODE_H / 2 + 14)
-        .attr('text-anchor', 'middle')
-        .attr('fill', 'rgba(255,255,255,0.7)')
-        .attr('font-size', '11px')
-        .attr('font-family', 'system-ui')
-        .text(subtitle + yearText);
-
-      // Level badge
-      group.append('rect')
-        .attr('x', NODE_W - 28)
-        .attr('y', -8)
-        .attr('width', 32)
-        .attr('height', 18)
-        .attr('rx', 9)
-        .attr('fill', 'hsl(220, 15%, 20%)')
-        .attr('stroke', 'hsl(220, 15%, 35%)')
-        .attr('stroke-width', 1);
-
-      group.append('text')
-        .attr('x', NODE_W - 12)
-        .attr('y', 5)
-        .attr('text-anchor', 'middle')
-        .attr('fill', 'hsl(38, 75%, 55%)')
-        .attr('font-size', '10px')
-        .attr('font-weight', '700')
-        .attr('font-family', '"Space Grotesk", sans-serif')
-        .text(`L${node.level}`);
-
-      // Hover effect
-      group.on('mouseenter', function () {
-        d3.select(this).select('rect:nth-child(2)')
-          .transition().duration(150)
-          .attr('stroke', 'hsl(38, 75%, 55%)')
-          .attr('stroke-width', 2.5);
-
-          
-        // Set hovered node for HTML buttons - center over the node
-        setHoveredNode({ id: node.id, type: node.type, x: node.x + NODE_W / 2 - 27.5, y: node.y + NODE_H / 2 - 12.5, parentId: node.parentId });
-      }).on('mouseleave', function () {
-        if (!isSelected) {
-          d3.select(this).select('rect:nth-child(2)')
-            .transition().duration(150)
-            .attr('stroke', 'hsl(220, 15%, 25%)')
-            .attr('stroke-width', 1.5);
-        }
-
-        // Only clear hovered node if not hovering over buttons
-        setTimeout(() => {
-          if (!isHoveringButtons) {
-            setHoveredNode(null);
-          }
-        }, 50);
-      });
+      const div = document.createElement("div");
+      const root = createRoot(div);
+      root.render(
+        <TreeNodeCard
+          node={node}
+          onClick={onNodeClick}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onAdd={onAdd} // Pass onAdd to card
+          isSelected={node.id === selectedId}
+          isOnPath={isNodeOnPath}
+        />
+      );
+      
+      foreignObject.node()?.appendChild(div);
+      foreignObject.on("mouseenter", function() { d3.select(this).raise(); });
     });
-  }, [data, onNodeClick, onEdit, onDelete, onAddParent, onAddChild, onAddSpouse, selectedId, isHoveringButtons]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    renderTree();
-  }, [renderTree]);
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 2])
+      .on("zoom", (event) => g.attr("transform", event.transform.toString()));
 
-  useEffect(() => {
-    const handleResize = () => renderTree();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [renderTree]);
+    svg.call(zoom);
+
+    const svgWidth = containerRef.current.clientWidth;
+    const treeWidth = Math.max(...nodes.map((n) => n.x)) + CARD_W;
+
+    const initialScale = 0.7;
+    const initialX = (svgWidth - treeWidth * initialScale) / 2;
+
+    svg.transition().duration(750).call(
+      zoom.transform as any,
+      d3.zoomIdentity
+        .translate(initialX, 50)
+        .scale(initialScale)
+    );
+
+  }, [nodes, links, onNodeClick, onEdit, onDelete, onAdd, ancestorPath, selectedId]);
 
   return (
-    <div ref={containerRef} className="w-full h-full overflow-hidden bg-background rounded-lg border border-border relative">
-      <svg ref={svgRef} width="100%" height="100%" />
-
-      {/* HTML Action Buttons Overlay */}
-      {hoveredNode && (
-        <div
-          className="absolute z-10 flex gap-1 bg-black/80 rounded-lg p-1 border border-gray-600"
-          style={{
-            left: `${zoomTransform.applyX(hoveredNode.x - 30)}px`,
-            top: `${zoomTransform.applyY(hoveredNode.y) - 55}px`,
-            transform: `scale(${zoomTransform.k})`,
-            transformOrigin: 'top left'
-          }}
-          onMouseEnter={() => {
-            setIsHoveringButtons(true);
-          }}
-          onMouseLeave={() => {
-            setIsHoveringButtons(false);
-            // Clear hovered node when leaving the buttons
-            setHoveredNode(null);
-          }}
-        >
-          <button
-            className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onAddParent) onAddParent(hoveredNode.id);
-              setHoveredNode(null);
-            }}
-            title="Add Parent"
-          >
-            👨
-          </button>
-          <button
-            className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onAddChild) {
-                // If it's a spouse, add child to the spouse's parent (the person)
-                const childParentId = hoveredNode.type === 'spouse' && hoveredNode.parentId ? hoveredNode.parentId : hoveredNode.id;
-                onAddChild(childParentId);
-              }
-              setHoveredNode(null);
-            }}
-            title="Add Child"
-          >
-            👶
-          </button>
-          <button
-            className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onAddSpouse) onAddSpouse(hoveredNode.id);
-              setHoveredNode(null);
-            }}
-            title="Add Spouse"
-          >
-            💍
-          </button>
-          <button
-            className="w-8 h-8 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onEdit) onEdit(hoveredNode.id, hoveredNode.type);
-              setHoveredNode(null);
-            }}
-            title="Edit"
-          >
-            ✏
-          </button>
-          <button
-            className="w-8 h-8 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onEdit) onEdit(hoveredNode.id, hoveredNode.type);
-              setHoveredNode(null);
-            }}
-            title="Edit"
-          >
-            ✏
-          </button>
-          <button
-            className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onDelete) onDelete(hoveredNode.id);
-              setHoveredNode(null);
-            }}
-            title="Delete"
-          >
-            🗑
-          </button>
-        </div>
-      )}
+    <div ref={containerRef} className="w-full h-full relative bg-slate-50 overflow-hidden">
+      <svg ref={svgRef} width="100%" height="100%" className="absolute top-0 left-0" />
     </div>
   );
 };

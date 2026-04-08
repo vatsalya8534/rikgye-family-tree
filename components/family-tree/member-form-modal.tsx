@@ -503,14 +503,13 @@ const MemberFormModal = ({
                           {!readOnly && ( // ✅ block file input completely
                             <input
                               type="file"
-                              multiple
                               className="hidden"
                               onChange={(e) => {
                                 if (!e.target.files) return;
-                                field.onChange([
-                                  ...(field.value || []),
-                                  ...Array.from(e.target.files),
-                                ]);
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  field.onChange([file]);
+                                }
                               }}
                             />
                           )}

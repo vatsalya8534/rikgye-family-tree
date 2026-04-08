@@ -13,6 +13,7 @@ export interface FamilyNode {
   gender: Gender;
   birthYear?: number;
   isAlive?: boolean;
+  image?: string;
   spouses: FamilyNodeSpouse[];
   children: FamilyNode[];
 }
@@ -29,7 +30,7 @@ export interface LayoutNode {
   id: string;
   name: string;
   gender: Gender;
-
+  image?: string;
   birthYear?: number;
   x: number;
   y: number;
@@ -72,7 +73,7 @@ const SIBLING_GAP = 400;
 
 const OVERFLOW_TOP = 20;
 const OVERFLOW_SIDES = 20;
-const FO_WIDTH = CARD_W + (OVERFLOW_SIDES * 2);
+const FO_WIDTH = CARD_W + OVERFLOW_SIDES * 2;
 const FO_HEIGHT = CARD_H + OVERFLOW_TOP + 20;
 
 // ------------------- Node Card ------------------- //
@@ -102,21 +103,27 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
   onView,
   isSelected = false,
   isOnPath = false,
-  currentUser
+  currentUser,
 }) => {
-
-
   const [hovered, setHovered] = useState(false);
   const isMale = node.gender === "MALE";
   const birthYear = node.birthYear || "";
-  const aliveStatus = node.isAlive ? "Alive" : "Dead";
+  const aliveStatus = node.isAlive === false ? "Dead" : "Alive";
 
   const pathBorderColor = isOnPath
     ? "border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.4)]"
-    : (isMale ? "border-blue-400" : "border-pink-400");
+    : isMale
+      ? "border-blue-400"
+      : "border-pink-400";
 
-  const pathAvatarColor = isOnPath ? "bg-amber-500" : (isMale ? "bg-blue-400" : "bg-pink-400");
-  const aliveColor = node.isAlive ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800";  
+  const pathAvatarColor = isOnPath
+    ? "bg-amber-500"
+    : isMale
+      ? "bg-blue-400"
+      : "bg-pink-400";
+  const aliveColor = node.isAlive
+    ? "bg-green-200 text-green-800"
+    : "bg-red-200 text-red-800";
 
   return (
     <div
@@ -125,14 +132,17 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
         paddingTop: OVERFLOW_TOP,
         paddingLeft: OVERFLOW_SIDES,
         paddingRight: OVERFLOW_SIDES,
-        transform: hovered ? "scale(1.03)" : "scale(1)"
+        transform: hovered ? "scale(1.03)" : "scale(1)",
       }}
       onMouseEnter={() => {
-        if(currentUser.role.toLowerCase() === "user" && currentUser.level.includes(node.level)) {
+        if (
+          currentUser.role.toLowerCase() === "user" &&
+          currentUser.level.includes(node.level)
+        ) {
           setHovered(true);
         }
 
-        if(currentUser.role.toLowerCase() === "admin") {
+        if (currentUser.role.toLowerCase() === "admin") {
           setHovered(true);
         }
       }}
@@ -140,7 +150,7 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
       onClick={() => onClick(node.id, node.type)}
     >
       {/* Hover Buttons */}
-      {hovered  && (
+      {hovered && (
         <div
           className={`absolute top-[100px] -translate-y-1/2 flex flex-col gap-2 p-1.5 bg-white border border-gray-200 rounded-xl shadow-xl z-50 transition-all duration-300
   ${hovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none"}`}
@@ -219,22 +229,40 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
         style={{ width: CARD_W, height: CARD_H }}
       >
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-md transition-colors duration-500 ${pathAvatarColor}`}>
-            {node.name.charAt(0)}
+          <div className="w-20 h-20 rounded-full border-4 border-white shadow-md overflow-hidden">
+            {node.image ? (
+              <img
+                src={node.image}
+                alt={node.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div
+                className={`w-full h-full flex items-center justify-center text-white text-2xl font-bold ${pathAvatarColor}`}
+              >
+                {node.name.charAt(0)}
+              </div>
+            )}
           </div>
         </div>
 
-        <p className={`mt-2 text-sm font-semibold text-center truncate px-2 w-full ${isOnPath ? "text-amber-800" : "text-gray-800"}`}>
+        <p
+          className={`mt-2 text-sm font-semibold text-center truncate px-2 w-full ${isOnPath ? "text-amber-800" : "text-gray-800"}`}
+        >
           {node.name}
         </p>
         <p className="text-[12px] text-gray-500">{birthYear}</p>
-        <span className={`mt-2 text-[10px] px-2 py-[2px] rounded-full font-medium ${aliveColor}`}>
+        <span
+          className={`mt-2 text-[10px] px-2 py-[2px] rounded-full font-medium ${aliveColor}`}
+        >
           {aliveStatus}
         </span>
 
         <div className="absolute top-2 right-2 flex items-center">
-          <div className={`w-8 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shadow-sm 
-            ${isOnPath ? "bg-amber-600 text-white" : "bg-gray-800 text-yellow-400"}`}>
+          <div
+            className={`w-8 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shadow-sm 
+            ${isOnPath ? "bg-amber-600 text-white" : "bg-gray-800 text-yellow-400"}`}
+          >
             L{node.level}
           </div>
         </div>
@@ -245,19 +273,58 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
 
 // ------------------- Layout Functions ------------------- //
 
-function placeNodes(node: FamilyNode, x: number, y: number, nodes: LayoutNode[], level: number = 0): number {
+function placeNodes(
+  node: FamilyNode,
+  x: number,
+  y: number,
+  nodes: LayoutNode[],
+  level: number = 0,
+): number {
   const currentWives = node.spouses.filter((s) => s.type === "current");
   const exWives = node.spouses.filter((s) => s.type === "ex");
   const personX = x + currentWives.length * (CARD_W + SPOUSE_GAP);
 
-  nodes.push({ id: node.id, name: node.name, gender: node.gender, birthYear: node.birthYear, x: personX, y, type: "person", level, isAlive: node.isAlive });
+  nodes.push({
+    id: node.id,
+    name: node.name,
+    gender: node.gender,
+    birthYear: node.birthYear,
+    image: node.image,
+    x: personX,
+    y,
+    type: "person",
+    level,
+    isAlive: node.isAlive,
+  });
 
   currentWives.forEach((spouse, i) => {
-    nodes.push({ id: spouse.id, name: spouse.name, gender: spouse.gender, birthYear: spouse.birthYear, x: personX - (i + 1) * (CARD_W + SPOUSE_GAP), y, type: "spouse", spouseType: "current", parentId: node.id, level });
+    nodes.push({
+      id: spouse.id,
+      name: spouse.name,
+      gender: spouse.gender,
+      birthYear: spouse.birthYear,
+      x: personX - (i + 1) * (CARD_W + SPOUSE_GAP),
+      y,
+      type: "spouse",
+      spouseType: "current",
+      parentId: node.id,
+      level,
+    });
   });
 
   exWives.forEach((spouse, i) => {
-    nodes.push({ id: spouse.id, name: spouse.name, gender: spouse.gender, birthYear: spouse.birthYear, x: personX + CARD_W + SPOUSE_GAP + i * (CARD_W + SPOUSE_GAP), y, type: "spouse", spouseType: "ex", parentId: node.id, level });
+    nodes.push({
+      id: spouse.id,
+      name: spouse.name,
+      gender: spouse.gender,
+      birthYear: spouse.birthYear,
+      x: personX + CARD_W + SPOUSE_GAP + i * (CARD_W + SPOUSE_GAP),
+      y,
+      type: "spouse",
+      spouseType: "ex",
+      parentId: node.id,
+      level,
+    });
   });
 
   const unitWidth = CARD_W + node.spouses.length * (CARD_W + SPOUSE_GAP);
@@ -273,7 +340,9 @@ function placeNodes(node: FamilyNode, x: number, y: number, nodes: LayoutNode[],
     childX += w + SIBLING_GAP;
   });
 
-  const totalChildrenWidth = childWidths.reduce((a, b) => a + b, 0) + (node.children.length - 1) * SIBLING_GAP;
+  const totalChildrenWidth =
+    childWidths.reduce((a, b) => a + b, 0) +
+    (node.children.length - 1) * SIBLING_GAP;
   const parentCenterX = personX + CARD_W / 2;
   const childrenCenterX = x + totalChildrenWidth / 2;
   const offset = parentCenterX - childrenCenterX;
@@ -285,30 +354,49 @@ function placeNodes(node: FamilyNode, x: number, y: number, nodes: LayoutNode[],
       return ids;
     };
     const idsToShift = new Set(node.children.flatMap(collectIds));
-    nodes.forEach((n) => { if (idsToShift.has(n.id)) n.x += offset; });
+    nodes.forEach((n) => {
+      if (idsToShift.has(n.id)) n.x += offset;
+    });
   }
 
   return Math.max(unitWidth, totalChildrenWidth + (offset > 0 ? offset : 0));
 }
 
-function computeLinks(node: FamilyNode, nodes: LayoutNode[], links: LayoutLink[]) {
+function computeLinks(
+  node: FamilyNode,
+  nodes: LayoutNode[],
+  links: LayoutLink[],
+) {
   const personNode = nodes.find((n) => n.id === node.id)!;
   node.spouses.forEach((spouse) => {
     const spouseNode = nodes.find((n) => n.id === spouse.id)!;
     const left = spouseNode.x < personNode.x ? spouseNode : personNode;
     const right = spouseNode.x < personNode.x ? personNode : spouseNode;
-    links.push({ source: { x: left.x + CARD_W, y: left.y + CARD_H / 2 }, target: { x: right.x, y: right.y + CARD_H / 2 }, sourceId: node.id, targetId: spouse.id, type: spouse.type });
+    links.push({
+      source: { x: left.x + CARD_W, y: left.y + CARD_H / 2 },
+      target: { x: right.x, y: right.y + CARD_H / 2 },
+      sourceId: node.id,
+      targetId: spouse.id,
+      type: spouse.type,
+    });
   });
   node.children.forEach((child) => {
     const childNode = nodes.find((n) => n.id === child.id)!;
-    links.push({ source: { x: personNode.x + CARD_W / 2, y: personNode.y + CARD_H }, target: { x: childNode.x + CARD_W / 2, y: childNode.y }, sourceId: node.id, targetId: child.id, type: "child" });
+    links.push({
+      source: { x: personNode.x + CARD_W / 2, y: personNode.y + CARD_H },
+      target: { x: childNode.x + CARD_W / 2, y: childNode.y },
+      sourceId: node.id,
+      targetId: child.id,
+      type: "child",
+    });
     computeLinks(child, nodes, links);
   });
 }
 
 function findAncestorPath(node: FamilyNode, targetId: string): string[] | null {
   if (node.id === targetId) return [node.id];
-  for (const spouse of node.spouses) if (spouse.id === targetId) return [node.id, spouse.id];
+  for (const spouse of node.spouses)
+    if (spouse.id === targetId) return [node.id, spouse.id];
   for (const child of node.children) {
     const path = findAncestorPath(child, targetId);
     if (path) return [node.id, ...path];
@@ -328,7 +416,7 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({
   onAddSpouse,
   onView,
   selectedId,
-  currentUser
+  currentUser,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -360,18 +448,24 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({
     const g = svg.append("g").attr("class", "zoom-group");
 
     links.forEach((link) => {
-      const isOnPath = ancestorPath.has(link.sourceId) && ancestorPath.has(link.targetId);
+      const isOnPath =
+        ancestorPath.has(link.sourceId) && ancestorPath.has(link.targetId);
       if (link.type === "child") {
         const midY = (link.source.y + link.target.y) / 2;
         g.append("path")
-          .attr("d", `M${link.source.x},${link.source.y} L${link.source.x},${midY} L${link.target.x},${midY} L${link.target.x},${link.target.y}`)
+          .attr(
+            "d",
+            `M${link.source.x},${link.source.y} L${link.source.x},${midY} L${link.target.x},${midY} L${link.target.x},${link.target.y}`,
+          )
           .attr("fill", "none")
           .attr("stroke", isOnPath ? "#f59e0b" : "#cbd5e1")
           .attr("stroke-width", isOnPath ? 4 : 2);
       } else {
         g.append("line")
-          .attr("x1", link.source.x).attr("y1", link.source.y)
-          .attr("x2", link.target.x).attr("y2", link.target.y)
+          .attr("x1", link.source.x)
+          .attr("y1", link.source.y)
+          .attr("x2", link.target.x)
+          .attr("y2", link.target.y)
           .attr("stroke", link.type === "current" ? "#ef4444" : "#94a3b8")
           .attr("stroke-width", 2)
           .attr("stroke-dasharray", link.type === "ex" ? "8,4" : "none");
@@ -380,7 +474,8 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({
 
     nodes.forEach((node) => {
       const isNodeOnPath = ancestorPath.has(node.id);
-      const foreignObject = g.append("foreignObject")
+      const foreignObject = g
+        .append("foreignObject")
         .attr("x", node.x - OVERFLOW_SIDES)
         .attr("y", node.y - OVERFLOW_TOP)
         .attr("width", FO_WIDTH)
@@ -402,14 +497,17 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({
           onView={onView}
           isSelected={node.id === selectedId}
           isOnPath={isNodeOnPath}
-        />
+        />,
       );
 
       foreignObject.node()?.appendChild(div);
-      foreignObject.on("mouseenter", function () { d3.select(this).raise(); });
+      foreignObject.on("mouseenter", function () {
+        d3.select(this).raise();
+      });
     });
 
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 2])
       .on("zoom", (event) => g.attr("transform", event.transform.toString()));
 
@@ -421,26 +519,51 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({
     const initialScale = 0.5;
     const initialX = (svgWidth - treeWidth * initialScale) / 2;
 
-    svg.transition().duration(750).call(
-      zoom.transform as any,
-      d3.zoomIdentity
-        .translate(initialX, 50)
-        .scale(initialScale)
-    );
-
-  }, [nodes, links, onNodeClick, onEdit, onDelete, onAdd, ancestorPath, selectedId]);
+    svg
+      .transition()
+      .duration(750)
+      .call(
+        zoom.transform as any,
+        d3.zoomIdentity.translate(initialX, 50).scale(initialScale),
+      );
+  }, [
+    nodes,
+    links,
+    onNodeClick,
+    onEdit,
+    onDelete,
+    onAdd,
+    ancestorPath,
+    selectedId,
+  ]);
 
   if (!mounted) {
     return (
-      <div ref={containerRef} className="w-full h-full relative bg-gradient-to-br from-green-50 to-emerald-100 overflow-hidden">
-        <svg ref={svgRef} width="100%" height="100%" className="absolute top-0 left-0" />
+      <div
+        ref={containerRef}
+        className="w-full h-full relative bg-gradient-to-br from-green-50 to-emerald-100 overflow-hidden"
+      >
+        <svg
+          ref={svgRef}
+          width="100%"
+          height="100%"
+          className="absolute top-0 left-0"
+        />
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className="w-full h-full relative bg-gradient-to-br from-green-50 to-emerald-100 overflow-hidden">
-      <svg ref={svgRef} width="100%" height="100%" className="absolute top-0 left-0" />
+    <div
+      ref={containerRef}
+      className="w-full h-full relative bg-gradient-to-br from-green-50 to-emerald-100 overflow-hidden"
+    >
+      <svg
+        ref={svgRef}
+        width="100%"
+        height="100%"
+        className="absolute top-0 left-0"
+      />
     </div>
   );
 };

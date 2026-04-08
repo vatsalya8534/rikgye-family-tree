@@ -65,8 +65,9 @@ interface TreeVisualizationProps {
 export const CARD_W = 150;
 export const CARD_H = 180;
 export const SPOUSE_GAP = 25;
-const H_GAP = 40;
+const H_GAP = 250;
 const V_GAP = 100;
+const SIBLING_GAP =  400;
 
 const OVERFLOW_TOP = 60;   
 const OVERFLOW_SIDES = 20; 
@@ -129,7 +130,7 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
       {hovered && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-1 z-50">
           {/* ADD CHILD BUTTON */}
-          <button
+          {/* <button
             onClick={(e) => {
               e.stopPropagation();
               const targetId = node.type === "spouse" ? node.parentId ?? node.id : node.id;
@@ -137,7 +138,7 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
             }}
             className="w-8 h-8 bg-purple-500 hover:bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
             title="Add Parent"
-          >👨</button>
+          >👨</button> */}
 
           <button
             onClick={(e) => {
@@ -238,10 +239,10 @@ function placeNodes(node: FamilyNode, x: number, y: number, nodes: LayoutNode[],
   node.children.forEach((child) => {
     const w = placeNodes(child, childX, childY, nodes, level + 1);
     childWidths.push(w);
-    childX += w + H_GAP;
+    childX += w + SIBLING_GAP;
   });
 
-  const totalChildrenWidth = childWidths.reduce((a, b) => a + b, 0) + (node.children.length - 1) * H_GAP;
+  const totalChildrenWidth = childWidths.reduce((a, b) => a + b, 0) + (node.children.length - 1) * SIBLING_GAP;
   const parentCenterX = personX + CARD_W / 2;
   const childrenCenterX = x + totalChildrenWidth / 2;
   const offset = parentCenterX - childrenCenterX;
@@ -398,14 +399,14 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({
 
   if (!mounted) {
     return (
-      <div ref={containerRef} className="w-full h-full relative bg-slate-50 overflow-hidden">
+      <div ref={containerRef} className="w-full h-full relative bg-gradient-to-br from-green-50 to-emerald-100 overflow-hidden">
         <svg ref={svgRef} width="100%" height="100%" className="absolute top-0 left-0" />
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className="w-full h-full relative bg-slate-50 overflow-hidden">
+    <div ref={containerRef} className="w-full h-full relative bg-gradient-to-br from-green-50 to-emerald-100 overflow-hidden">
       <svg ref={svgRef} width="100%" height="100%" className="absolute top-0 left-0" />
     </div>
   );

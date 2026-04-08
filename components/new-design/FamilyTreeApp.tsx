@@ -170,7 +170,7 @@ const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data }: any) =
       </motion.header>
 
       {/* Tree */}
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center ">
         {root ? (
           <TreeVisualization
             data={root}

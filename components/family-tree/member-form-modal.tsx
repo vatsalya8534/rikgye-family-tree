@@ -122,6 +122,8 @@ const MemberFormModal = ({
       },
   });
 
+  form.setValue("type", "current");
+
   let relationWatch = form.watch("relation");
 
   useEffect(() => {
@@ -132,7 +134,7 @@ const MemberFormModal = ({
         form.setValue("type", "current");
       }
     } else {
-      form.setValue("type", "");
+      form.setValue("type", "current");
     }
   }, [relationWatch]);
 

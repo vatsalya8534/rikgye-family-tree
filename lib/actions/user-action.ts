@@ -23,37 +23,48 @@ export async function getUsers() {
 
 // create user
 export async function createUser(data: z.infer<typeof userSchema>) {
+  try {
+    const user = userSchema.parse(data);
 
-   try {
-      const user = userSchema.parse(data)
+    const imageValue =
+      user.avatar instanceof File ? user.avatar.name : user.avatar ?? null;
 
-      const imageValue = user.avatar instanceof File ? user.avatar.name : user.avatar ?? null
+    // ✅ CHECK USERNAME FIRST
+    const existingUser = await prisma.user.findUnique({
+      where: { username: user.username },
+    });
 
-      await prisma.user.create({
-         data: {
-            username: user.username,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            avatar: imageValue,
-            password: user.password,
-            status: user.status,
-            role: user.role,
-            level: user.level,
-         }
-      })
-
+    if (existingUser) {
       return {
-         success: true,
-         message: "User created successfully"
-      }
+        success: false,
+        message: "Username already exists",
+      };
+    }
 
-   } catch (error) {
-      return {
-         success: false,
-         message: formatError(error)
-      }
-   }
+    await prisma.user.create({
+      data: {
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        avatar: imageValue,
+        password: user.password,
+        status: user.status,
+        role: user.role,
+        level: user.level,
+      },
+    });
+
+    return {
+      success: true,
+      message: "User created successfully",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: formatError(error),
+    };
+  }
 }
 
 // get user by id

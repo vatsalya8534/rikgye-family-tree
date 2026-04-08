@@ -14,23 +14,14 @@
 
 import { auth } from '@/auth'
 import FamilyTreeApp from '@/components/new-design/FamilyTreeApp'
-import { buildFamilyTree } from '@/lib/actions/family-member'
+import { buildFamilyTree, getTreeData } from '@/lib/actions/family-member'
 import { getUserById } from '@/lib/actions/user-action'
 import { prisma } from '@/lib/db/prisma-helper'
 
 const FamilyPage = async () => {
-  let data: any = null
-  let rootMemberId = await prisma.familyMember.findFirst({
-    where: { parentId: null },
-  });
 
-  if (rootMemberId !== null) {
-    let result: any = await buildFamilyTree(rootMemberId.id)
-    data = result
-  }
-
-  const members = await prisma.familyMember.findMany();
-
+  const { data, members } = await getTreeData();
+  
   let currentUser: any = await auth();
 
   currentUser = await getUserById(currentUser?.user?.id || "");

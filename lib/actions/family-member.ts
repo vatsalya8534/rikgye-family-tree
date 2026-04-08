@@ -52,6 +52,13 @@ export async function createFamilyMember(data: Omit<any, "id">) {
     throw new Error("User not authenticated");
   }
 
+  const countMembers = await prisma.familyMember.count();
+
+  // If no members exist, force the first one to be root
+  if (countMembers === 0) {
+    data.type = "root";
+  }
+
   const parentId = data.parentId ?? null;
   const relation = data.relation || "CHILD";
 
@@ -186,7 +193,7 @@ export async function getFamilyMembers(): Promise<FamilyMemberTree[]> {
 export async function getTreeData() {
   let data: any = null;
   let rootMemberId = await prisma.familyMember.findFirst({
-    where: { parentId: null },
+    where: { type: "root" },
   });
 
   if (rootMemberId !== null) {

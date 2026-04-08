@@ -116,7 +116,7 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
     : (isMale ? "border-blue-400" : "border-pink-400");
 
   const pathAvatarColor = isOnPath ? "bg-amber-500" : (isMale ? "bg-blue-400" : "bg-pink-400");
-  const aliveColor = node.isAlive ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800";
+  const aliveColor = node.isAlive ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800";  
 
   return (
     <div
@@ -129,6 +129,10 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
       }}
       onMouseEnter={() => {
         if(currentUser.role.toLowerCase() === "user" && currentUser.level.includes(node.level)) {
+          setHovered(true);
+        }
+
+        if(currentUser.role.toLowerCase() === "admin") {
           setHovered(true);
         }
       }}

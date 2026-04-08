@@ -12,9 +12,12 @@
 //   )
 // }
 
+import { auth } from '@/auth'
 import FamilyTreeApp from '@/components/new-design/FamilyTreeApp'
 import { buildFamilyTree } from '@/lib/actions/family-member'
+import { getUserById } from '@/lib/actions/user-action'
 import { prisma } from '@/lib/db/prisma-helper'
+import { get } from 'http'
 
 const NewDesign = async () => {
   let data: any = null
@@ -29,8 +32,12 @@ const NewDesign = async () => {
   
   const members = await prisma.familyMember.findMany();
 
+  let currentUser : any = await auth();
+
+  currentUser = await getUserById(currentUser?.user?.id || "");
+
   return (
-    <FamilyTreeApp data={data} members={members} />
+    <FamilyTreeApp data={data} members={members} currentUser={currentUser.data} />
   )
 }
 

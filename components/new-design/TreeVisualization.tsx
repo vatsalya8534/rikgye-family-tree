@@ -58,6 +58,7 @@ interface TreeVisualizationProps {
   onAddSpouse?: (id: string) => void;
   onView?: (id: string, type: "person" | "spouse") => void;
   selectedId?: string | null;
+  currentUser?: any;
 }
 
 // ------------------- Constants ------------------- //
@@ -67,10 +68,10 @@ export const CARD_H = 180;
 export const SPOUSE_GAP = 25;
 const H_GAP = 250;
 const V_GAP = 100;
-const SIBLING_GAP =  400;
+const SIBLING_GAP = 400;
 
-const OVERFLOW_TOP = 60;   
-const OVERFLOW_SIDES = 20; 
+const OVERFLOW_TOP = 20;
+const OVERFLOW_SIDES = 20;
 const FO_WIDTH = CARD_W + (OVERFLOW_SIDES * 2);
 const FO_HEIGHT = CARD_H + OVERFLOW_TOP + 20;
 
@@ -86,7 +87,8 @@ interface TreeNodeCardProps {
   onAddSpouse?: (id: string) => void;
   onView?: (id: string, type: "person" | "spouse") => void;
   isSelected?: boolean;
-  isOnPath?: boolean; 
+  isOnPath?: boolean;
+  currentUser?: any;
 }
 
 const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
@@ -100,24 +102,25 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
   onView,
   isSelected = false,
   isOnPath = false,
+  currentUser
 }) => {
   const [hovered, setHovered] = useState(false);
   const isMale = node.gender === "MALE";
   const birthYear = node.birthYear || "";
   const aliveStatus = node.isAlive ? "Alive" : "Dead";
-  
-  const pathBorderColor = isOnPath 
-    ? "border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.4)]" 
+
+  const pathBorderColor = isOnPath
+    ? "border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.4)]"
     : (isMale ? "border-blue-400" : "border-pink-400");
-    
+
   const pathAvatarColor = isOnPath ? "bg-amber-500" : (isMale ? "bg-blue-400" : "bg-pink-400");
   const aliveColor = node.isAlive ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800";
 
   return (
     <div
-      className="relative w-full h-full transition-all duration-300"
-      style={{ 
-        paddingTop: OVERFLOW_TOP, 
+      className="relative w-full h-screen transition-all duration-300"
+      style={{
+        paddingTop: OVERFLOW_TOP,
         paddingLeft: OVERFLOW_SIDES,
         paddingRight: OVERFLOW_SIDES,
         transform: hovered ? "scale(1.03)" : "scale(1)"
@@ -127,58 +130,128 @@ const TreeNodeCard: React.FC<TreeNodeCardProps> = ({
       onClick={() => onClick(node.id, node.type)}
     >
       {/* Hover Buttons */}
-      {hovered && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-1 z-50">
-          {/* ADD CHILD BUTTON */}
-          {/* <button
-            onClick={(e) => {
-              e.stopPropagation();
-              const targetId = node.type === "spouse" ? node.parentId ?? node.id : node.id;
-              onAddParent?.(targetId);
-            }}
-            className="w-8 h-8 bg-purple-500 hover:bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
-            title="Add Parent"
-          >👨</button> */}
-
+      {hovered && currentUser.level === ("L" + node.level) && (
+        <div
+          className={`absolute top-[100px] -translate-y-1/2 flex flex-col gap-2 p-1.5 bg-white border border-gray-200 rounded-xl shadow-xl z-50 transition-all duration-300
+  ${hovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none"}`}
+          style={{ left: OVERFLOW_SIDES + CARD_W + 8 }}
+        >
+          {/* ADD CHILD */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              const targetId = node.type === "spouse" ? node.parentId ?? node.id : node.id;
+              const targetId =
+                node.type === "spouse" ? (node.parentId ?? node.id) : node.id;
               onAdd?.(targetId);
             }}
-            className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+            className="w-7 h-7 bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center justify-center text-xs shadow-sm transition-transform active:scale-90"
             title="Add Child"
-          >＋</button>
+          >
+            ＋
+          </button>
 
-          {/* ADD SPOUSE BUTTON */}
+          {/* ADD SPOUSE */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              const targetId = node.type === "spouse" ? node.parentId ?? node.id : node.id;
+              const targetId =
+                node.type === "spouse" ? (node.parentId ?? node.id) : node.id;
               onAddSpouse?.(targetId);
             }}
-            className="w-8 h-8 bg-pink-500 hover:bg-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+            className="w-7 h-7 bg-pink-500 hover:bg-pink-600 text-white rounded-lg flex items-center justify-center text-xs shadow-sm transition-transform active:scale-90"
             title="Add Spouse"
-          >♥</button>
+          >
+            ♥
+          </button>
 
+          {/* VIEW */}
           <button
-            onClick={(e) => { e.stopPropagation(); onView?.(node.id, node.type); }}
-            className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+            onClick={(e) => {
+              e.stopPropagation();
+              onView?.(node.id, node.type);
+            }}
+            className="w-7 h-7 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center justify-center text-xs shadow-sm transition-transform active:scale-90"
             title="View Details"
-          >👁</button>
+          >
+            👁
+          </button>
 
+          {/* EDIT */}
           <button
-            onClick={(e) => { e.stopPropagation(); onEdit?.(node.id, node.type); }}
-            className="w-8 h-8 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.(node.id, node.type);
+            }}
+            className="w-7 h-7 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg flex items-center justify-center text-xs shadow-sm transition-transform active:scale-90"
             title="Edit"
-          >✏</button>
+          >
+            ✏
+          </button>
 
+          {/* DELETE */}
           <button
-            onClick={(e) => { e.stopPropagation(); onDelete?.(node.id); }}
-            className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.(node.id);
+            }}
+            className="w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center text-xs shadow-sm transition-transform active:scale-90"
             title="Delete"
-          >🗑</button>
+          >
+            🗑
+          </button>
         </div>
+
+        // <div className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-1 z-50">
+        //   {/* ADD CHILD BUTTON */}
+        //   {/* <button
+        //     onClick={(e) => {
+        //       e.stopPropagation();
+        //       const targetId = node.type === "spouse" ? node.parentId ?? node.id : node.id;
+        //       onAddParent?.(targetId);
+        //     }}
+        //     className="w-8 h-8 bg-purple-500 hover:bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+        //     title="Add Parent"
+        //   >👨</button> */}
+
+        //   <button
+        //     onClick={(e) => {
+        //       e.stopPropagation();
+        //       const targetId = node.type === "spouse" ? node.parentId ?? node.id : node.id;
+        //       onAdd?.(targetId);
+        //     }}
+        //     className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+        //     title="Add Child"
+        //   >＋</button>
+
+        //   {/* ADD SPOUSE BUTTON */}
+        //   <button
+        //     onClick={(e) => {
+        //       e.stopPropagation();
+        //       const targetId = node.type === "spouse" ? node.parentId ?? node.id : node.id;
+        //       onAddSpouse?.(targetId);
+        //     }}
+        //     className="w-8 h-8 bg-pink-500 hover:bg-pink-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+        //     title="Add Spouse"
+        //   >♥</button>
+
+        //   <button
+        //     onClick={(e) => { e.stopPropagation(); onView?.(node.id, node.type); }}
+        //     className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+        //     title="View Details"
+        //   >👁</button>
+
+        //   <button
+        //     onClick={(e) => { e.stopPropagation(); onEdit?.(node.id, node.type); }}
+        //     className="w-8 h-8 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+        //     title="Edit"
+        //   >✏</button>
+
+        //   <button
+        //     onClick={(e) => { e.stopPropagation(); onDelete?.(node.id); }}
+        //     className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md"
+        //     title="Delete"
+        //   >🗑</button>
+        // </div>
       )}
 
       <div
@@ -297,6 +370,7 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({
   onAddSpouse,
   onView,
   selectedId,
+  currentUser
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -360,6 +434,7 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       root.render(
         <TreeNodeCard
           node={node}
+          currentUser={currentUser}
           onClick={onNodeClick}
           onEdit={onEdit}
           onDelete={onDelete}
@@ -371,9 +446,9 @@ const TreeVisualization: React.FC<TreeVisualizationProps> = ({
           isOnPath={isNodeOnPath}
         />
       );
-      
+
       foreignObject.node()?.appendChild(div);
-      foreignObject.on("mouseenter", function() { d3.select(this).raise(); });
+      foreignObject.on("mouseenter", function () { d3.select(this).raise(); });
     });
 
     const zoom = d3.zoom<SVGSVGElement, unknown>()

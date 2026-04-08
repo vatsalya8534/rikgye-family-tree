@@ -12,7 +12,7 @@ import { getFamilyMemberByID, deleteFamilyMember } from '@/lib/actions/family-me
 import { DeleteMemberDialog } from '../family-tree/delete-member-modal';
 import { ChildDeleteMemberModal } from '../family-tree/child-delete-member-modal';
 
-const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data }: any) => {
+const FamilyTreeApp: React.FC<{ data?: any; members?: any; currentUser?: any }> = ({ data, currentUser }: any) => {
   const { root, findNode, members, reloadData } = useFamilyTree(data);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<'person' | 'spouse'>('person');
@@ -180,6 +180,7 @@ const FamilyTreeApp: React.FC<{ data?: any; members?: any }> = ({ data }: any) =
               setSelectedType(type);
               setEditModal(true);
             }}
+            currentUser={currentUser}
             onDelete={handleDelete}
             onAddParent={(id) => {
               setAddParentChildId(id);
